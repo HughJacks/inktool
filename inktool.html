@@ -413,6 +413,39 @@ const PARAMS = migrateParams({ ...DEFAULT_PARAMS, ...loadDevParams() });
 if (PARAMS.paperTexture == null) PARAMS.paperTexture = 0;
 if (PARAMS.cropMargin == null) PARAMS.cropMargin = DEFAULT_PARAMS.cropMargin;
 
+/* ---------------- COMMUNICATE PARAMS (dev) ---------------- */
+
+const COMM_DEV_DEFAULTS_KEY = 'inktool-comm-params';
+
+const COMM_DEFAULT_PARAMS = {
+  lineStartSize: 0.25,
+  lineEndSize: 1.4,
+  lineStartDensity: 0.12,
+  lineEndDensity: 0.42,
+  lineSpacing: 0.006,
+  flowStrength: 50,
+  flowWidth: 0.05,
+  flowGrow: 1,
+};
+
+function loadCommDevParams(){
+  try {
+    const raw = localStorage.getItem(COMM_DEV_DEFAULTS_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    if (!saved || typeof saved !== 'object') return null;
+    return saved;
+  } catch {
+    return null;
+  }
+}
+
+function saveCommDevParams(){
+  localStorage.setItem(COMM_DEV_DEFAULTS_KEY, JSON.stringify({ ...COMM_PARAMS }));
+}
+
+const COMM_PARAMS = { ...COMM_DEFAULT_PARAMS, ...loadCommDevParams() };
+
 layoutViewport();
 
 function paperEnabled(){
@@ -449,6 +482,7 @@ let appMode = 'create';
 let enabledColors = PALETTE.map((_, i) => i);
 let dropColorIdx = 0;
 let activeDrop = { x: 0.5, y: 0.5, on: false, until: 0, radius: 0.02 };
+let commAnchor = { x: 0, y: 0, set: false };
 const DROP_SETTLE_MS = 2800;
 const FIX_DRY_TAU = 0.18;
 const FIX_DURATION_MS = 700;
@@ -651,6 +685,39 @@ void main(){
   float gate = interior * (1.0 - edge * 0.96);
 
   o = vec4(dir.x * k * uStrength * gate, dir.y * k * uStrength * gate, 0., 1.);
+}`;
+
+const lineFlowFS = `#version 300 es
+precision highp float; in vec2 vUv; out vec4 o;
+uniform sampler2D uWet;
+uniform float uAspect; uniform vec2 uA, uB; uniform float uWidth, uStrength, uGrow;
+uniform vec2 uWetTexel;
+void main(){
+  vec2 p = vUv; p.x *= uAspect;
+  vec2 a = uA; a.x *= uAspect;
+  vec2 b = uB; b.x *= uAspect;
+  vec2 ab = b - a;
+  float len2 = max(dot(ab, ab), 1e-8);
+  float t = clamp(dot(p - a, ab) / len2, 0.0, 1.0);
+  vec2 proj = a + ab * t;
+  float d = length(p - proj);
+  float band = exp(-(d * d) / max(uWidth * uWidth, 1e-8));
+  if (band < 0.001) { o = vec4(0.); return; }
+  vec2 dir = normalize(ab + 1e-6);
+  float grow = mix(1.0, t, clamp(uGrow, 0.0, 1.0));
+
+  float w = texture(uWet, vUv).x;
+  float wL = texture(uWet, vUv - vec2(uWetTexel.x, 0.)).x;
+  float wR = texture(uWet, vUv + vec2(uWetTexel.x, 0.)).x;
+  float wB = texture(uWet, vUv - vec2(0., uWetTexel.y)).x;
+  float wT = texture(uWet, vUv + vec2(0., uWetTexel.y)).x;
+  vec2 gradW = vec2(wR - wL, wT - wB);
+  float edge = smoothstep(0.05, 0.24, length(gradW));
+  float interior = smoothstep(0.14, 0.48, w);
+  float gate = interior * (1.0 - edge * 0.96);
+
+  vec2 vel = dir * uStrength * band * grow * gate;
+  o = vec4(vel.x, vel.y, 0., 1.);
 }`;
 
 const circleMaskFS = `#version 300 es
@@ -992,6 +1059,7 @@ void main(){ o = vec4(texture(uSource, vUv).rgb, 1.0); }`;
 const progSplat = program(splatFS);
 const progInkDropSplat = program(inkDropSplatFS);
 const progRadialVel = program(radialVelFS);
+const progLineFlow = program(lineFlowFS);
 const progCircleMask = program(circleMaskFS);
 const progFillFromMask = program(fillFromMaskFS);
 const progAmbientFromMask = program(ambientFromMaskFS);
@@ -1098,6 +1166,7 @@ function clearAll(){
   dropCount = 0;
   lastDropAt = appNow();
   activeDrop = { x: 0.5, y: 0.5, on: false, until: 0, radius: 0.02 };
+  commAnchor = { x: 0, y: 0, set: false };
   hideSelectOverlay();
   clearSelectionMask();
   for (const d of [velocity, pressure, ink, wet]){
@@ -1345,6 +1414,107 @@ function depositInkDrop(x, y, holdMs){
   return true;
 }
 
+/* ---------------- COMMUNICATE (line) ---------------- */
+
+function injectLineFlow(ax, ay, bx, by){
+  const f = velocity.read;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, f.fbo);
+  gl.viewport(0, 0, f.w, f.h);
+  gl.enable(gl.BLEND);
+  gl.blendEquation(gl.FUNC_ADD);
+  gl.blendFunc(gl.ONE, gl.ONE);
+  progLineFlow.bind();
+  gl.uniform1i(progLineFlow.u.uWet, wet.read.attach(0));
+  gl.uniform1f(progLineFlow.u.uAspect, canvas.width / canvas.height);
+  gl.uniform2f(progLineFlow.u.uA, ax, ay);
+  gl.uniform2f(progLineFlow.u.uB, bx, by);
+  gl.uniform1f(progLineFlow.u.uWidth, COMM_PARAMS.flowWidth);
+  gl.uniform1f(progLineFlow.u.uStrength, COMM_PARAMS.flowStrength);
+  gl.uniform1f(progLineFlow.u.uGrow, COMM_PARAMS.flowGrow);
+  gl.uniform2f(progLineFlow.u.uWetTexel, wet.texel[0], wet.texel[1]);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.blendEquation(gl.FUNC_ADD);
+  gl.disable(gl.BLEND);
+}
+
+function gradientColor(t){
+  if (!enabledColors.length) return [0, 0, 0];
+  const cols = enabledColors.map(i => hexToRgb(PALETTE[i].hex));
+  if (cols.length === 1) return cols[0];
+  const seg = Math.max(0, Math.min(1, t)) * (cols.length - 1);
+  const i = Math.min(cols.length - 2, Math.floor(seg));
+  const f = seg - i;
+  return [
+    cols[i][0] + (cols[i + 1][0] - cols[i][0]) * f,
+    cols[i][1] + (cols[i + 1][1] - cols[i][1]) * f,
+    cols[i][2] + (cols[i + 1][2] - cols[i][2]) * f,
+  ];
+}
+
+function drawCommunicateLine(ax, ay, bx, by){
+  if (!enabledColors.length || sessionState !== 'composing') return false;
+  const dist = Math.hypot(bx - ax, by - ay);
+  const spacing = Math.max(0.002, COMM_PARAMS.lineSpacing);
+  const steps = Math.max(1, Math.ceil(dist / spacing));
+  for (let s = 0; s <= steps; s++){
+    const t = s / steps;
+    const x = ax + (bx - ax) * t;
+    const y = ay + (by - ay) * t;
+    const size = COMM_PARAMS.lineStartSize + (COMM_PARAMS.lineEndSize - COMM_PARAMS.lineStartSize) * t;
+    const density = COMM_PARAMS.lineStartDensity + (COMM_PARAMS.lineEndDensity - COMM_PARAMS.lineStartDensity) * t;
+    const [r, g, b] = gradientColor(t);
+    const abs = rgbToInkAbs(r, g, b);
+    const dens = density * 4.5;
+    const dr = 0.004 + Math.max(0, size) * 0.011;
+    inkDropSplat(ink, x, y, dr, [abs[0] * dens, abs[1] * dens, abs[2] * dens, 0]);
+  }
+  injectLineFlow(ax, ay, bx, by);
+  applyingWater = true;
+  const now = appNow();
+  const dr = 0.004 + Math.max(0, COMM_PARAMS.lineEndSize) * 0.011;
+  activeDrop = { x: bx, y: by, on: true, until: now + DROP_SETTLE_MS, radius: Math.sqrt(dr) };
+  dropCount++;
+  lastDropAt = now;
+  updatePhaseUI();
+  return true;
+}
+
+function drawCommPreview(ax, ay, bx, by){
+  const W = selectOverlay.width, H = selectOverlay.height;
+  selectCtx.clearRect(0, 0, W, H);
+  const m = cropMargin();
+  const span = Math.max(1 - 2 * m, 0.001);
+  const toPx = (x, y) => [((x - m) / span) * W, (1 - (y - m) / span) * H];
+  const [ax2, ay2] = toPx(ax, ay);
+  const [bx2, by2] = toPx(bx, by);
+  selectCtx.setLineDash([10, 12]);
+  selectCtx.strokeStyle = 'rgba(66,197,254,0.7)';
+  selectCtx.lineWidth = 3;
+  selectCtx.beginPath();
+  selectCtx.moveTo(ax2, ay2);
+  selectCtx.lineTo(bx2, by2);
+  selectCtx.stroke();
+  selectCtx.setLineDash([]);
+  selectCtx.fillStyle = 'rgba(66,197,254,0.9)';
+  selectCtx.beginPath(); selectCtx.arc(ax2, ay2, 7, 0, Math.PI * 2); selectCtx.fill();
+  selectCtx.beginPath(); selectCtx.arc(bx2, by2, 13, 0, Math.PI * 2); selectCtx.fill();
+}
+
+function handleCommunicateClick(x, y){
+  if (sessionState !== 'composing') return;
+  if (!commAnchor.set){
+    commAnchor = { x, y, set: true };
+    showSelectOverlay();
+    drawCommPreview(x, y, x, y);
+    flashStatus('ok');
+  } else {
+    const ok = drawCommunicateLine(commAnchor.x, commAnchor.y, x, y);
+    commAnchor = { x: 0, y: 0, set: false };
+    hideSelectOverlay();
+    flashStatus(ok ? 'ok' : 'no');
+  }
+}
+
 function flashStatus(kind){
   statusEl.classList.remove('flash-ok', 'flash-no');
   void statusEl.offsetWidth;
@@ -1512,7 +1682,7 @@ let activePointerId = null;
 let strokes = 0;
 
 function simPausedForHold(){
-  return ptr.down && sessionState === 'composing';
+  return ptr.down && sessionState === 'composing' && appMode !== 'communicate';
 }
 
 function toUv(e){
@@ -1558,6 +1728,9 @@ canvas.addEventListener('pointermove', e => {
   ptr.cx = e.clientX; ptr.cy = e.clientY; ptr.inWindow = true;
   if (!ptr.down) ptr.type = e.pointerType;
   readPressure(e);
+  if (appMode === 'communicate' && commAnchor.set){
+    drawCommPreview(commAnchor.x, commAnchor.y, x, y);
+  }
 });
 
 function endStroke(e){
@@ -1578,8 +1751,12 @@ function endStroke(e){
   }
 
   if (sessionState === 'composing'){
-    if (depositInkDrop(x, y, holdMs)) flashStatus('ok');
-    else flashStatus('no');
+    if (appMode === 'communicate'){
+      handleCommunicateClick(x, y);
+    } else {
+      if (depositInkDrop(x, y, holdMs)) flashStatus('ok');
+      else flashStatus('no');
+    }
   }
 
   endTimerPause();
@@ -1605,7 +1782,7 @@ function updateCursor(){
   }
   cursorEl.style.setProperty('--dry-p', ringP);
 
-  const charging = ptr.down && sessionState === 'composing';
+  const charging = ptr.down && sessionState === 'composing' && appMode !== 'communicate';
   const holdMs = charging ? performance.now() - ptr.holdStart : 0;
   const charge = charging ? holdDropParams(holdMs) : null;
 
@@ -1702,7 +1879,7 @@ PALETTE.forEach((c, i) => {
 
 const HINTS = {
   create: 'hold to size drop · release · pause to fix',
-  communicate: 'hold to size drop · release · pause to fix',
+  communicate: 'click start · click end · line grows + flows',
   convene: 'hold to size drop · release · pause to fix',
 };
 document.querySelectorAll('.app-mode').forEach(btn => {
@@ -1713,8 +1890,10 @@ document.querySelectorAll('.app-mode').forEach(btn => {
     hintEl.innerHTML = HINTS[appMode] || HINTS.create;
     dropColorIdx = 0;
     activeDrop = { x: 0.5, y: 0.5, on: false, until: 0, radius: 0.02 };
+    commAnchor = { x: 0, y: 0, set: false };
     hideSelectOverlay();
     clearSelectionMask();
+    renderParamPanel(appMode);
   });
 });
 
@@ -1758,65 +1937,118 @@ const PARAM_DEFS = [
     help: 'Limits ambient motion in water blobs. Ink drops use drop motion.' },
 ];
 
+const COMM_PARAM_DEFS = [
+  { group: 'paramTap', key: 'lineStartSize', store: 'comm', label: 'Start size', step: 0.01,
+    help: 'Dab radius at point A — small at the start.' },
+  { group: 'paramTap', key: 'lineEndSize', store: 'comm', label: 'End size', step: 0.01,
+    help: 'Dab radius at point B — grows larger toward the end.' },
+  { group: 'paramTap', key: 'lineStartDensity', store: 'comm', label: 'Start density', step: 0.01,
+    help: 'Pigment at point A — lighter at the start.' },
+  { group: 'paramTap', key: 'lineEndDensity', store: 'comm', label: 'End density', step: 0.01,
+    help: 'Pigment at point B — more pigment toward the end.' },
+  { group: 'paramTap', key: 'lineSpacing', store: 'comm', label: 'Dab spacing', step: 0.001,
+    help: 'Distance between dabs along the line (uv). Smaller = smoother.' },
+  { group: 'paramWater', key: 'flowStrength', store: 'comm', label: 'Flow strength', step: 1,
+    help: 'Directional water push speed along A → B.' },
+  { group: 'paramWater', key: 'flowWidth', store: 'comm', label: 'Flow width', step: 0.005,
+    help: 'Half-width of the flow band around the line (uv).' },
+  { group: 'paramSim', key: 'bleed', label: 'Bleed', step: 0.01,
+    help: 'Color mixing and watercolor softness within wet areas.' },
+  { group: 'paramSim', key: 'flowDamp', label: 'Flow damping', step: 0.01,
+    help: 'How quickly water motion calms. Reduces turbulent edges.' },
+  { group: 'paramSim', key: 'displayStrength', label: 'Display strength', step: 0.05,
+    help: 'Overall pigment visibility on the white paper.' },
+  { group: 'paramSim', key: 'vorticityScale', label: 'Water turbulence', step: 0.05,
+    help: 'Ambient swirl in flowing water.' },
+  { group: 'paramSim', key: 'waterVelCap', label: 'Water speed cap', step: 1,
+    help: 'Limits ambient motion in water.' },
+  { group: 'paramCanvas', key: 'cropMargin', label: 'Crop margin', step: 0.002,
+    help: 'Hidden buffer inset from sim edges. Canvas shows only the cropped region.' },
+  { group: 'paramDebug', key: 'fixDelayMs', label: 'Time until fix (ms)', step: 100,
+    help: 'Idle wait after the last line before ink fixes to paper.' },
+];
+
+const GROUP_ORDER = ['paramTap', 'paramHold', 'paramDebug', 'paramCanvas', 'paramWater', 'paramInk', 'paramSim'];
+
+const GROUP_TITLES = {
+  create: { paramTap: 'Tap', paramHold: 'Full hold', paramDebug: 'Debug',
+    paramCanvas: 'Canvas', paramWater: 'Water', paramInk: 'Ink drop', paramSim: 'Simulation' },
+  communicate: { paramTap: 'Line', paramDebug: 'Debug', paramCanvas: 'Canvas',
+    paramWater: 'Flow', paramSim: 'Simulation' },
+};
+
+function paramStoreFor(def){
+  return def.store === 'comm' ? COMM_PARAMS : PARAMS;
+}
+
 function bindParamInput(def, input){
+  const store = paramStoreFor(def);
   const apply = () => {
     const v = parseFloat(input.value);
     if (!Number.isFinite(v)) return;
-    PARAMS[def.key] = v;
+    store[def.key] = v;
     if (def.onApply) def.onApply();
   };
   input.addEventListener('input', apply);
   input.addEventListener('change', apply);
 }
 
-const groupTitles = {
-  paramTap: 'Tap', paramHold: 'Full hold', paramDebug: 'Debug',
-  paramCanvas: 'Canvas', paramWater: 'Water', paramInk: 'Ink drop', paramSim: 'Simulation',
-};
-for (const g of ['paramTap', 'paramHold', 'paramDebug', 'paramCanvas', 'paramWater', 'paramInk', 'paramSim']){
-  const el = document.getElementById(g);
-  el.innerHTML = '<h3>' + groupTitles[g] + '</h3>';
-}
-PARAM_DEFS.forEach(def => {
-  const row = document.createElement('div');
-  row.className = 'param-row';
-  const id = 'p_' + def.key;
-  const input = document.createElement('input');
-  input.type = 'number';
-  input.id = id;
-  input.step = def.step;
-  input.value = PARAMS[def.key];
-  row.innerHTML = '<label for="' + id + '">' + def.label + '</label>';
-  row.appendChild(input);
-  const help = document.createElement('div');
-  help.className = 'help';
-  help.textContent = def.help;
-  row.appendChild(help);
-  document.getElementById(def.group).appendChild(row);
-  bindParamInput(def, input);
-});
-
-(function(){
+function addCheckboxRow(group, key, label, help, store){
   const row = document.createElement('div');
   row.className = 'param-row param-check';
-  row.innerHTML = '<label for="p_paperTexture"><input type="checkbox" id="p_paperTexture"> Paper texture</label>'
-    + '<div class="help">Show paper scan on canvas. Ink always follows paper grain (displacement).</div>';
-  document.getElementById('paramSim').appendChild(row);
-  const box = document.getElementById('p_paperTexture');
-  box.checked = PARAMS.paperTexture > 0.5;
-  box.addEventListener('change', e => {
-    PARAMS.paperTexture = e.target.checked ? 1 : 0;
+  const id = 'p_' + key;
+  row.innerHTML = '<label for="' + id + '"><input type="checkbox" id="' + id + '"> ' + label + '</label>'
+    + '<div class="help">' + help + '</div>';
+  document.getElementById(group).appendChild(row);
+  const box = document.getElementById(id);
+  box.checked = store[key] > 0.5;
+  box.addEventListener('change', e => { store[key] = e.target.checked ? 1 : 0; });
+}
+
+function renderParamPanel(mode){
+  const defs = mode === 'communicate' ? COMM_PARAM_DEFS : PARAM_DEFS;
+  const titles = GROUP_TITLES[mode] || GROUP_TITLES.create;
+  for (const g of GROUP_ORDER) document.getElementById(g).innerHTML = '';
+  const used = new Set(defs.map(d => d.group));
+  for (const g of GROUP_ORDER){
+    if (used.has(g) && titles[g]){
+      document.getElementById(g).innerHTML = '<h3>' + titles[g] + '</h3>';
+    }
+  }
+  defs.forEach(def => {
+    const row = document.createElement('div');
+    row.className = 'param-row';
+    const id = 'p_' + def.key;
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.id = id;
+    input.step = def.step;
+    input.value = paramStoreFor(def)[def.key];
+    row.innerHTML = '<label for="' + id + '">' + def.label + '</label>';
+    row.appendChild(input);
+    const help = document.createElement('div');
+    help.className = 'help';
+    help.textContent = def.help;
+    row.appendChild(help);
+    document.getElementById(def.group).appendChild(row);
+    bindParamInput(def, input);
   });
-})();
+  if (mode === 'communicate'){
+    addCheckboxRow('paramWater', 'flowGrow', 'Flow grows toward B',
+      'Scale flow speed up from A to B (more push at the end).', COMM_PARAMS);
+    addCheckboxRow('paramSim', 'paperTexture', 'Paper texture',
+      'Show paper scan on canvas. Ink always follows paper grain (displacement).', PARAMS);
+  } else {
+    addCheckboxRow('paramSim', 'paperTexture', 'Paper texture',
+      'Show paper scan on canvas. Ink always follows paper grain (displacement).', PARAMS);
+  }
+}
 
 function applyParamsToUI(){
-  PARAM_DEFS.forEach(def => {
-    const el = document.getElementById('p_' + def.key);
-    if (el) el.value = PARAMS[def.key];
-  });
-  const paperBox = document.getElementById('p_paperTexture');
-  if (paperBox) paperBox.checked = PARAMS.paperTexture > 0.5;
+  renderParamPanel(appMode);
 }
+
+renderParamPanel(appMode);
 
 function toggleParams(){
   paramsEl.classList.toggle('show');
@@ -1825,7 +2057,8 @@ function toggleParams(){
 
 document.getElementById('bClear').addEventListener('click', clearAll);
 document.getElementById('bSetDefault').addEventListener('click', () => {
-  saveDevParams();
+  if (appMode === 'communicate') saveCommDevParams();
+  else saveDevParams();
   flashStatus('ok');
 });
 document.getElementById('bSave').addEventListener('click', () => {
