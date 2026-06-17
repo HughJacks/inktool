@@ -109,6 +109,52 @@
   .color-swatch:not(.on) { opacity: 0.32; }
   .color-swatch.on { border-color: rgba(38, 38, 48, 0.85);
                      box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(38, 38, 48, 0.2); }
+  .color-swatch.editing { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(66,197,254,.55); transform: scale(1.1); }
+
+  #huePicker { position: fixed; left: 50%; bottom: calc(64px + env(safe-area-inset-bottom));
+               transform: translateX(-50%) translateY(8px); z-index: 8;
+               display: flex; align-items: center; gap: 10px;
+               padding: 10px 14px; border-radius: 999px;
+               background: #fff; box-shadow: 0 2px 16px rgba(0,0,0,.12);
+               opacity: 0; pointer-events: none;
+               transition: opacity .2s ease, transform .2s ease; }
+  #huePicker.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+  #huePicker .hue-preview { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+                            border: 1px solid rgba(38,38,48,.12);
+                            background: var(--hue-preview, #ff4980); }
+  #huePicker label { font-size: 7px; letter-spacing: .22em; text-transform: uppercase;
+                     color: rgba(38,38,48,.45); white-space: nowrap; }
+  #huePicker input[type=range] { width: min(200px, 42vw); margin: 0; }
+
+  #guide { position: fixed; left: calc(12px + env(safe-area-inset-left));
+           bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 6;
+           max-width: min(300px, calc(100vw - 24px));
+           padding: 12px 28px 12px 14px; border-radius: 12px;
+           background: rgba(255,255,255,.94); box-shadow: 0 2px 14px rgba(0,0,0,.08);
+           font-size: 9px; line-height: 1.55; color: rgba(38,38,48,.55);
+           transition: opacity .3s ease, transform .3s ease; }
+  #guide.collapsed { opacity: 0; pointer-events: none; transform: translateY(6px); }
+  #guide h3 { margin: 0 0 8px; font-size: 8px; letter-spacing: .32em; text-transform: uppercase;
+              font-weight: 500; color: rgba(38,38,48,.7); }
+  #guide .guide-block { margin-bottom: 8px; }
+  #guide .guide-block:last-child { margin-bottom: 0; }
+  #guide .guide-label { font-size: 7px; letter-spacing: .22em; text-transform: uppercase;
+                        color: rgba(38,38,48,.38); margin-bottom: 2px; }
+  #guide b { font-weight: 600; color: rgba(38,38,48,.82); }
+  #guide .guide-close { position: absolute; top: 8px; right: 10px; border: none; background: none;
+                        cursor: pointer; padding: 2px 4px; font-family: inherit;
+                        font-size: 14px; line-height: 1; color: rgba(38,38,48,.35); }
+  #guide .guide-close:hover { color: rgba(38,38,48,.7); }
+  #guideToggle { position: fixed; left: calc(12px + env(safe-area-inset-left));
+                 bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 7;
+                 width: 28px; height: 28px; padding: 0; border-radius: 50%;
+                 border: 1px solid rgba(38,38,48,.12); background: #fff;
+                 box-shadow: 0 2px 10px rgba(0,0,0,.08); cursor: pointer;
+                 font-family: inherit; font-size: 12px; font-weight: 500;
+                 color: rgba(38,38,48,.55); line-height: 1;
+                 transition: color .15s ease, background .15s ease, opacity .2s ease; }
+  #guideToggle:hover { color: rgba(38,38,48,.85); background: rgba(38,38,48,.04); }
+  #guide:not(.collapsed) ~ #guideToggle { opacity: 0; pointer-events: none; }
 
   #params { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw);
             z-index: 9; background: #fff; box-shadow: -4px 0 24px rgba(0,0,0,.08);
@@ -149,46 +195,6 @@
   .err { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
          font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: rgba(38,38,48,.5); }
 
-  .palette-picker { display: flex; flex-direction: column; align-items: center; gap: 3px;
-                     border: none; background: none; cursor: pointer; padding: 2px 4px 0;
-                     color: rgba(38, 38, 48, 0.42); font-family: inherit;
-                     transition: color .15s ease; flex-shrink: 0; }
-  .palette-picker:hover { color: rgba(38, 38, 48, 0.72); }
-  .palette-picker svg { width: 16px; height: 16px; display: block; }
-  .palette-picker span { font-size: 6px; letter-spacing: .14em; text-transform: uppercase;
-                         line-height: 1; max-width: 52px; text-align: center;
-                         white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-  #guide { position: fixed; left: calc(12px + env(safe-area-inset-left));
-           bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 6;
-           max-width: min(300px, calc(100vw - 24px));
-           padding: 12px 28px 12px 14px; border-radius: 12px;
-           background: rgba(255,255,255,.94); box-shadow: 0 2px 14px rgba(0,0,0,.08);
-           font-size: 9px; line-height: 1.55; color: rgba(38,38,48,.55);
-           transition: opacity .3s ease, transform .3s ease; }
-  #guide.collapsed { opacity: 0; pointer-events: none; transform: translateY(6px); }
-  #guide h3 { margin: 0 0 8px; font-size: 8px; letter-spacing: .32em; text-transform: uppercase;
-              font-weight: 500; color: rgba(38,38,48,.7); }
-  #guide .guide-block { margin-bottom: 8px; }
-  #guide .guide-block:last-child { margin-bottom: 0; }
-  #guide .guide-label { font-size: 7px; letter-spacing: .22em; text-transform: uppercase;
-                        color: rgba(38,38,48,.38); margin-bottom: 2px; }
-  #guide b { font-weight: 600; color: rgba(38,38,48,.82); }
-  #guide .guide-close { position: absolute; top: 8px; right: 10px; border: none; background: none;
-                        cursor: pointer; padding: 2px 4px; font-family: inherit;
-                        font-size: 14px; line-height: 1; color: rgba(38,38,48,.35); }
-  #guide .guide-close:hover { color: rgba(38,38,48,.7); }
-  #guideToggle { position: fixed; left: calc(12px + env(safe-area-inset-left));
-                 bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 7;
-                 width: 28px; height: 28px; padding: 0; border-radius: 50%;
-                 border: 1px solid rgba(38,38,48,.12); background: #fff;
-                 box-shadow: 0 2px 10px rgba(0,0,0,.08); cursor: pointer;
-                 font-family: inherit; font-size: 12px; font-weight: 500;
-                 color: rgba(38,38,48,.55); line-height: 1;
-                 transition: color .15s ease, background .15s ease, opacity .2s ease; }
-  #guideToggle:hover { color: rgba(38,38,48,.85); background: rgba(38,38,48,.04); }
-  #guide:not(.collapsed) ~ #guideToggle { opacity: 0; pointer-events: none; }
-
   body.touch .color-swatch { width: 34px; height: 34px; }
   @media (max-width: 600px) {
     #ui { max-width: calc(100vw - 16px); flex-wrap: wrap; justify-content: center; padding: 10px 14px; }
@@ -211,21 +217,27 @@
   <button type="button" class="guide-close" aria-label="Hide guide">×</button>
   <h3>Guide</h3>
   <div class="guide-block">
-    <div class="guide-label">Canvas</div>
+    <div class="guide-label">Canvas — Create / Convene</div>
     <div><b>Tap</b> — small, dense ink drop</div>
     <div><b>Hold</b> — charge a larger wash, then release</div>
     <div><b>Pause</b> — ink fixes to paper after idle</div>
   </div>
   <div class="guide-block">
+    <div class="guide-label">Canvas — Communicate</div>
+    <div><b>Click</b> — set anchor point</div>
+    <div><b>Pull back</b> — aim the shot (preview shows trajectory)</div>
+    <div><b>Release</b> — gradient ink fires past the anchor</div>
+  </div>
+  <div class="guide-block">
     <div class="guide-label">Modes</div>
     <div><b>Create</b> — freeform ink on wet paper</div>
-    <div><b>Communicate</b> — click start, then end; line flows A → B</div>
+    <div><b>Communicate</b> — slingshot a gradient line through an anchor</div>
     <div><b>Convene</b> — same drawing as Create (group sessions)</div>
   </div>
   <div class="guide-block">
-    <div class="guide-label">Toolbar</div>
-    <div><b>Swatches</b> — click to include or exclude a color from rotation</div>
-    <div><b>Palette</b> — cycle preset color palettes</div>
+    <div class="guide-label">Colors</div>
+    <div><b>Click swatch</b> — include or exclude from rotation</div>
+    <div><b>Double-click swatch</b> — adjust that color's hue</div>
   </div>
   <div class="guide-block">
     <div class="guide-label">Parameters panel (P)</div>
@@ -235,6 +247,11 @@
   </div>
 </aside>
 <button type="button" id="guideToggle" aria-label="Show guide" title="Show guide">?</button>
+<div id="huePicker" aria-hidden="true">
+  <span class="hue-preview" aria-hidden="true"></span>
+  <label for="hueSlider">Hue</label>
+  <input type="range" id="hueSlider" min="0" max="360" step="1" value="340">
+</div>
 <div id="ui">
   <div class="tool-section app-modes" id="appModes">
     <button type="button" class="app-mode active" data-mode="create" aria-label="Create">
@@ -259,18 +276,7 @@
     </button>
   </div>
   <div class="tool-divider" aria-hidden="true"></div>
-  <div class="tool-section color-swatches">
-    <button type="button" class="palette-picker" id="palettePicker" aria-label="Change palette" title="Change palette">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="7" cy="7" r="2.5" fill="currentColor" stroke="none"/>
-        <circle cx="17" cy="7" r="2.5" fill="currentColor" stroke="none"/>
-        <circle cx="12" cy="17" r="2.5" fill="currentColor" stroke="none"/>
-        <path d="M7 9.5v2M17 9.5v2M9.5 15.5h5"/>
-      </svg>
-      <span id="paletteName">Everyone</span>
-    </button>
-    <div id="colorSwatches"></div>
-  </div>
+  <div class="tool-section color-swatches" id="colorSwatches"></div>
 </div>
 <aside id="params" aria-hidden="true">
   <h2>Parameters</h2>
@@ -308,7 +314,7 @@ const VIEW_PAD = { x: 0.055, y: 0.055, min: 32 };
 let viewLayout = { x: 0, y: 0, w: CANVAS_W, h: CANVAS_H, scale: 1 };
 
 function cropMargin(){
-  return Math.max(0, Math.min(0.25, PARAMS.cropMargin ?? 0.015));
+  return Math.max(0, Math.min(0.25, activeParams().cropMargin ?? 0.015));
 }
 
 function screenToSimUv(nx, ny){
@@ -575,26 +581,52 @@ if (PARAMS.cropMargin == null) PARAMS.cropMargin = DEFAULT_PARAMS.cropMargin;
 
 /* ---------------- COMMUNICATE PARAMS (dev) ---------------- */
 
-const COMM_DEV_DEFAULTS_KEY = 'inktool-comm-params';
+const COMM_DEV_DEFAULTS_KEY = 'inktool-comm-params-v4';
+
+const COMM_MIN_DRAG = 0.008;
 
 const COMM_DEFAULT_PARAMS = {
-  lineStartSize: 10,
-  lineEndSize: 20,
-  lineStartDensity: 0.002,
-  lineEndDensity: 0.002,
-  lineSpacing: 0.006,
-  flowStrength: 1000,
-  flowWidth: 0.25,
+  lineLength: 2.0,
+  lineStartSize: 0.06,
+  lineEndSize: 0.38,
+  lineStartDensity: 0.18,
+  lineEndDensity: 0.55,
+  flowStrength: 750,
+  flowWidth: 0.45,
+  flowWander: 0.35,
   flowGrow: 1,
+  cropMargin: 0.015,
+  wetAmount: 1,
+  wetSpread: 0.45,
+  dryRate: 0,
+  fixDelayMs: 2000,
+  tension: 32,
+  bleed: 0.36,
+  flowDamp: 0.31,
+  displayStrength: 1,
+  vorticityScale: 0.85,
+  waterVelCap: 30,
+  paperTexture: 1,
 };
+
+function migrateCommParams(raw){
+  const p = { ...raw };
+  for (const [key, val] of Object.entries(COMM_DEFAULT_PARAMS)){
+    if (p[key] == null) p[key] = val;
+  }
+  return p;
+}
 
 function loadCommDevParams(){
   try {
-    const raw = localStorage.getItem(COMM_DEV_DEFAULTS_KEY);
-    if (!raw) return null;
-    const saved = JSON.parse(raw);
-    if (!saved || typeof saved !== 'object') return null;
-    return saved;
+    const keys = [COMM_DEV_DEFAULTS_KEY, 'inktool-comm-params-v2'];
+    for (const key of keys){
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const saved = JSON.parse(raw);
+      if (saved && typeof saved === 'object') return saved;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -604,60 +636,71 @@ function saveCommDevParams(){
   localStorage.setItem(COMM_DEV_DEFAULTS_KEY, JSON.stringify({ ...COMM_PARAMS }));
 }
 
-const COMM_PARAMS = { ...COMM_DEFAULT_PARAMS, ...loadCommDevParams() };
+const COMM_PARAMS = migrateCommParams({ ...COMM_DEFAULT_PARAMS, ...loadCommDevParams() });
+
+function paramsForMode(mode){
+  return mode === 'communicate' ? COMM_PARAMS : PARAMS;
+}
+
+function activeParams(){
+  return paramsForMode(appMode);
+}
 
 layoutViewport();
 
 function paperEnabled(){
-  return paperReady && PARAMS.paperTexture > 0.5;
+  return paperReady && activeParams().paperTexture > 0.5;
 }
 
-const PALETTES = [
-  { name: 'Everyone', colors: [
-    { name: 'pink', hex: '#FF4980' },
-    { name: 'lavender', hex: '#F5D0FF' },
-    { name: 'purple', hex: '#7E6FF9' },
-    { name: 'yellow', hex: '#FAFFAD' },
-    { name: 'cyan', hex: '#42C5FE' },
-    { name: 'magenta', hex: '#BC5898' },
-  ]},
-  { name: 'Warm', colors: [
-    { name: 'coral', hex: '#FF6B4A' },
-    { name: 'peach', hex: '#FFC4A3' },
-    { name: 'gold', hex: '#F5C842' },
-    { name: 'rust', hex: '#C45C3E' },
-    { name: 'rose', hex: '#E8899A' },
-    { name: 'amber', hex: '#FFB347' },
-  ]},
-  { name: 'Cool', colors: [
-    { name: 'sky', hex: '#42C5FE' },
-    { name: 'teal', hex: '#2EC4B6' },
-    { name: 'indigo', hex: '#5B5FEF' },
-    { name: 'mint', hex: '#A8F0D4' },
-    { name: 'slate', hex: '#6B8CBA' },
-    { name: 'ice', hex: '#D4EEFF' },
-  ]},
-  { name: 'Earth', colors: [
-    { name: 'ochre', hex: '#C9A44C' },
-    { name: 'clay', hex: '#B8735A' },
-    { name: 'moss', hex: '#6B8F5E' },
-    { name: 'sand', hex: '#E8D5B0' },
-    { name: 'umber', hex: '#8B6914' },
-    { name: 'stone', hex: '#9A9A8E' },
-  ]},
-  { name: 'Neon', colors: [
-    { name: 'hot pink', hex: '#FF1493' },
-    { name: 'electric', hex: '#00D4FF' },
-    { name: 'lime', hex: '#CCFF00' },
-    { name: 'violet', hex: '#9B30FF' },
-    { name: 'orange', hex: '#FF6600' },
-    { name: 'yellow', hex: '#FFFF00' },
-  ]},
-];
-const PALETTE_KEY = 'inktool-palette';
-let paletteIdx = parseInt(localStorage.getItem(PALETTE_KEY), 10);
-if (!Number.isFinite(paletteIdx) || paletteIdx < 0 || paletteIdx >= PALETTES.length) paletteIdx = 0;
-let PALETTE = PALETTES[paletteIdx].colors;
+const COLOR_COUNT = 6;
+const DEFAULT_HUES = [340, 288, 252, 58, 198, 318];
+const COLOR_SAT = 0.78;
+const COLOR_LIGHT = 0.62;
+const HUES_KEY = 'inktool-color-hues';
+
+function hslToHex(h, s, l){
+  h = ((h % 360) + 360) % 360;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = l - c / 2;
+  let r = 0, g = 0, b = 0;
+  if (h < 60) { r = c; g = x; }
+  else if (h < 120) { r = x; g = c; }
+  else if (h < 180) { g = c; b = x; }
+  else if (h < 240) { g = x; b = c; }
+  else if (h < 300) { r = x; b = c; }
+  else { r = c; b = x; }
+  const toByte = v => Math.round((v + m) * 255).toString(16).padStart(2, '0');
+  return '#' + toByte(r) + toByte(g) + toByte(b);
+}
+
+function loadColorHues(){
+  try {
+    const raw = localStorage.getItem(HUES_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    if (!Array.isArray(saved) || saved.length !== COLOR_COUNT) return null;
+    if (!saved.every(v => Number.isFinite(v))) return null;
+    return saved.map(v => ((v % 360) + 360) % 360);
+  } catch {
+    return null;
+  }
+}
+
+function saveColorHues(){
+  localStorage.setItem(HUES_KEY, JSON.stringify(colorHues));
+}
+
+let colorHues = loadColorHues() || DEFAULT_HUES.slice();
+let PALETTE = [];
+
+function rebuildPalette(){
+  PALETTE = colorHues.map((h, i) => ({
+    name: 'Color ' + (i + 1),
+    hex: hslToHex(h, COLOR_SAT, COLOR_LIGHT),
+  }));
+}
+rebuildPalette();
 
 const SIM_BASE = 256;
 const DYE_BASE = Math.min(2048, Math.min(canvas.width, canvas.height));
@@ -693,7 +736,7 @@ const HOLD_DEAD_MS = 35;
 let ambientPhase = 0;
 
 function idleToFixMs(){
-  return Math.max(100, PARAMS.fixDelayMs ?? 2000);
+  return Math.max(100, activeParams().fixDelayMs ?? 2000);
 }
 
 function smoothstep(t){
@@ -888,8 +931,15 @@ void main(){
 const lineFlowFS = `#version 300 es
 precision highp float; in vec2 vUv; out vec4 o;
 uniform sampler2D uWet;
-uniform float uAspect; uniform vec2 uA, uB; uniform float uWidth, uStrength, uGrow;
+uniform float uAspect; uniform vec2 uA, uB; uniform float uWidth, uStrength, uGrow, uWander, uSeed;
 uniform vec2 uWetTexel;
+float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p){
+  vec2 i = floor(p); vec2 f = fract(p);
+  float a = hash(i), b = hash(i + vec2(1., 0.)), c = hash(i + vec2(0., 1.)), d = hash(i + vec2(1., 1.));
+  vec2 u = f * f * (3. - 2. * f);
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
 void main(){
   vec2 p = vUv; p.x *= uAspect;
   vec2 a = uA; a.x *= uAspect;
@@ -902,7 +952,12 @@ void main(){
   float band = exp(-(d * d) / max(uWidth * uWidth, 1e-8));
   if (band < 0.001) { o = vec4(0.); return; }
   vec2 dir = normalize(ab + 1e-6);
+  vec2 perp = vec2(-dir.y, dir.x);
   float grow = mix(1.0, t, clamp(uGrow, 0.0, 1.0));
+
+  float wob = sin(t * 9.0 + uSeed) * 0.6 + sin(t * 21.0 + uSeed * 1.7) * 0.4;
+  float n = noise(p * 26.0 + vec2(uSeed)) * 2.0 - 1.0;
+  vec2 flowDir = normalize(dir + perp * (wob + n * 0.5) * uWander);
 
   float w = texture(uWet, vUv).x;
   float wL = texture(uWet, vUv - vec2(uWetTexel.x, 0.)).x;
@@ -914,8 +969,55 @@ void main(){
   float interior = smoothstep(0.14, 0.48, w);
   float gate = interior * (1.0 - edge * 0.96);
 
-  vec2 vel = dir * uStrength * band * grow * gate;
+  vec2 vel = flowDir * uStrength * band * grow * gate;
   o = vec4(vel.x, vel.y, 0., 1.);
+}`;
+
+const lineFillFS = `#version 300 es
+precision highp float; in vec2 vUv; out vec4 o;
+uniform float uAspect; uniform vec2 uA, uB;
+uniform float uStartWidth, uEndWidth, uStartDensity, uEndDensity;
+uniform vec3 uColors[6]; uniform int uColorCount;
+vec3 rgbToInkAbs(vec3 c){
+  vec3 A = -log(max(c, vec3(0.02)));
+  float m = max(max(A.x, A.y), max(A.z, 0.12));
+  vec3 absb = A / m;
+  float lum = dot(c, vec3(0.299, 0.587, 0.114));
+  float lift = max(0.0, 0.62 - lum) * 0.85;
+  vec3 cmy = vec3(1.0) - c;
+  return absb * 0.55 + cmy * 0.55 + lift;
+}
+vec3 gradAt(float t){
+  if (uColorCount <= 1) return uColors[0];
+  float seg = clamp(t, 0.0, 1.0) * float(uColorCount - 1);
+  int i = int(floor(seg));
+  i = min(i, uColorCount - 2);
+  float f = seg - float(i);
+  return mix(uColors[i], uColors[i + 1], f);
+}
+float squareCov(vec2 p, vec2 c, float halfSide){
+  vec2 d = abs(p - c) - halfSide;
+  float dist = max(d.x, d.y);
+  float aa = max(fwidth(dist), 0.0008);
+  return 1.0 - smoothstep(-aa, aa, dist);
+}
+void main(){
+  vec2 p = vUv; p.x *= uAspect;
+  vec2 a = uA; a.x *= uAspect;
+  vec2 b = uB; b.x *= uAspect;
+  vec2 ab = b - a;
+  float L = max(length(ab), 1e-5);
+  vec2 abN = ab / L;
+  float sAlong = dot(p - a, abN);
+  float t = sAlong <= 0.0 ? 0.0 : (sAlong >= L ? 1.0 : sAlong / L);
+  vec2 mid = a + abN * (t * L);
+  float halfT = mix(uStartWidth, uEndWidth, t);
+  float cov = max(squareCov(p, a, uStartWidth),
+              max(squareCov(p, b, uEndWidth), squareCov(p, mid, halfT)));
+  if (cov < 0.002) { o = vec4(0.); return; }
+  float density = mix(uStartDensity, uEndDensity, t);
+  vec3 absb = rgbToInkAbs(gradAt(t));
+  o = vec4(absb * density * cov, 0.0);
 }`;
 
 const circleMaskFS = `#version 300 es
@@ -1258,6 +1360,7 @@ const progSplat = program(splatFS);
 const progInkDropSplat = program(inkDropSplatFS);
 const progRadialVel = program(radialVelFS);
 const progLineFlow = program(lineFlowFS);
+const progLineFill = program(lineFillFS);
 const progCircleMask = program(circleMaskFS);
 const progFillFromMask = program(fillFromMaskFS);
 const progAmbientFromMask = program(ambientFromMaskFS);
@@ -1296,7 +1399,7 @@ window.addEventListener('resize', () => {
 });
 
 function fillCanvasWet(amount){
-  const w = amount == null ? PARAMS.wetAmount : amount;
+  const w = amount == null ? activeParams().wetAmount : amount;
   for (const f of [wet.read, wet.write]){
     gl.bindFramebuffer(gl.FRAMEBUFFER, f.fbo);
     gl.viewport(0, 0, f.w, f.h);
@@ -1614,7 +1717,22 @@ function depositInkDrop(x, y, holdMs){
 
 /* ---------------- COMMUNICATE (line) ---------------- */
 
-function injectLineFlow(ax, ay, bx, by){
+function commSlingshotShot(anchorX, anchorY, pullX, pullY){
+  const p = activeParams();
+  const dx = anchorX - pullX, dy = anchorY - pullY;
+  const drag = Math.hypot(dx, dy);
+  if (drag < COMM_MIN_DRAG) return null;
+  const lineLen = drag * p.lineLength;
+  const nx = dx / drag, ny = dy / drag;
+  return {
+    drag,
+    ax: pullX, ay: pullY,
+    bx: pullX + nx * lineLen, by: pullY + ny * lineLen,
+  };
+}
+
+function injectLineFlow(ax, ay, bx, by, dragDist){
+  const p = activeParams();
   const f = velocity.read;
   gl.bindFramebuffer(gl.FRAMEBUFFER, f.fbo);
   gl.viewport(0, 0, f.w, f.h);
@@ -1626,91 +1744,97 @@ function injectLineFlow(ax, ay, bx, by){
   gl.uniform1f(progLineFlow.u.uAspect, canvas.width / canvas.height);
   gl.uniform2f(progLineFlow.u.uA, ax, ay);
   gl.uniform2f(progLineFlow.u.uB, bx, by);
-  gl.uniform1f(progLineFlow.u.uWidth, COMM_PARAMS.flowWidth);
-  gl.uniform1f(progLineFlow.u.uStrength, COMM_PARAMS.flowStrength);
-  gl.uniform1f(progLineFlow.u.uGrow, COMM_PARAMS.flowGrow);
+  gl.uniform1f(progLineFlow.u.uWidth, p.flowWidth * dragDist);
+  gl.uniform1f(progLineFlow.u.uStrength, p.flowStrength * dragDist);
+  gl.uniform1f(progLineFlow.u.uGrow, p.flowGrow);
+  gl.uniform1f(progLineFlow.u.uWander, p.flowWander);
+  gl.uniform1f(progLineFlow.u.uSeed, Math.random() * 100);
   gl.uniform2f(progLineFlow.u.uWetTexel, wet.texel[0], wet.texel[1]);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   gl.blendEquation(gl.FUNC_ADD);
   gl.disable(gl.BLEND);
 }
 
-function gradientColor(t){
-  if (!enabledColors.length) return [0, 0, 0];
-  const cols = enabledColors.map(i => hexToRgb(PALETTE[i].hex));
-  if (cols.length === 1) return cols[0];
-  const seg = Math.max(0, Math.min(1, t)) * (cols.length - 1);
-  const i = Math.min(cols.length - 2, Math.floor(seg));
-  const f = seg - i;
-  return [
-    cols[i][0] + (cols[i + 1][0] - cols[i][0]) * f,
-    cols[i][1] + (cols[i + 1][1] - cols[i][1]) * f,
-    cols[i][2] + (cols[i + 1][2] - cols[i][2]) * f,
-  ];
+function commSquareHalf(sizeMult, dragDist){
+  return 0.002 + Math.max(0, sizeMult) * dragDist;
 }
 
-function drawCommunicateLine(ax, ay, bx, by){
-  if (!enabledColors.length || sessionState !== 'composing') return false;
-  const dist = Math.hypot(bx - ax, by - ay);
-  const spacing = Math.max(0.002, COMM_PARAMS.lineSpacing);
-  const steps = Math.max(1, Math.ceil(dist / spacing));
-  for (let s = 0; s <= steps; s++){
-    const t = s / steps;
-    const x = ax + (bx - ax) * t;
-    const y = ay + (by - ay) * t;
-    const size = COMM_PARAMS.lineStartSize + (COMM_PARAMS.lineEndSize - COMM_PARAMS.lineStartSize) * t;
-    const density = COMM_PARAMS.lineStartDensity + (COMM_PARAMS.lineEndDensity - COMM_PARAMS.lineStartDensity) * t;
-    const [r, g, b] = gradientColor(t);
-    const abs = rgbToInkAbs(r, g, b);
-    const dens = density * 4.5;
-    const dr = 0.004 + Math.max(0, size) * 0.011;
-    inkDropSplat(ink, x, y, dr, [abs[0] * dens, abs[1] * dens, abs[2] * dens, 0]);
+function drawLineFill(ax, ay, bx, by, dragDist){
+  const p = activeParams();
+  const cols = enabledColors.map(i => hexToRgb(PALETTE[i].hex));
+  const count = Math.min(6, Math.max(1, cols.length));
+  const flat = new Float32Array(6 * 3);
+  for (let i = 0; i < 6; i++){
+    const src = cols[Math.min(i, count - 1)] || [0, 0, 0];
+    flat[i * 3] = src[0]; flat[i * 3 + 1] = src[1]; flat[i * 3 + 2] = src[2];
   }
-  injectLineFlow(ax, ay, bx, by);
+  const f = ink.read;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, f.fbo);
+  gl.viewport(0, 0, f.w, f.h);
+  gl.enable(gl.BLEND);
+  gl.blendEquation(gl.FUNC_ADD);
+  gl.blendFunc(gl.ONE, gl.ONE);
+  progLineFill.bind();
+  gl.uniform1f(progLineFill.u.uAspect, canvas.width / canvas.height);
+  gl.uniform2f(progLineFill.u.uA, ax, ay);
+  gl.uniform2f(progLineFill.u.uB, bx, by);
+  gl.uniform1f(progLineFill.u.uStartWidth, commSquareHalf(p.lineStartSize, dragDist));
+  gl.uniform1f(progLineFill.u.uEndWidth, commSquareHalf(p.lineEndSize, dragDist));
+  gl.uniform1f(progLineFill.u.uStartDensity, p.lineStartDensity * 4.5);
+  gl.uniform1f(progLineFill.u.uEndDensity, p.lineEndDensity * 4.5);
+  gl.uniform3fv(progLineFill.u['uColors[0]'], flat);
+  gl.uniform1i(progLineFill.u.uColorCount, count);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.blendEquation(gl.FUNC_ADD);
+  gl.disable(gl.BLEND);
+}
+
+function drawCommunicateLine(anchorX, anchorY, pullX, pullY){
+  const shot = commSlingshotShot(anchorX, anchorY, pullX, pullY);
+  if (!shot || !enabledColors.length || sessionState !== 'composing') return false;
+  drawLineFill(shot.ax, shot.ay, shot.bx, shot.by, shot.drag);
+  injectLineFlow(shot.ax, shot.ay, shot.bx, shot.by, shot.drag);
   applyingWater = true;
   const now = appNow();
-  const dr = 0.004 + Math.max(0, COMM_PARAMS.lineEndSize) * 0.011;
-  activeDrop = { x: bx, y: by, on: true, until: now + DROP_SETTLE_MS, radius: Math.sqrt(dr) };
+  const dr = commSquareHalf(activeParams().lineEndSize, shot.drag);
+  activeDrop = { x: shot.bx, y: shot.by, on: true, until: now + DROP_SETTLE_MS, radius: dr };
   dropCount++;
   lastDropAt = now;
   updatePhaseUI();
   return true;
 }
 
-function drawCommPreview(ax, ay, bx, by){
+function drawCommSlingshotPreview(anchorX, anchorY, pullX, pullY){
   const W = selectOverlay.width, H = selectOverlay.height;
   selectCtx.clearRect(0, 0, W, H);
   const m = cropMargin();
   const span = Math.max(1 - 2 * m, 0.001);
   const toPx = (x, y) => [((x - m) / span) * W, (1 - (y - m) / span) * H];
-  const [ax2, ay2] = toPx(ax, ay);
-  const [bx2, by2] = toPx(bx, by);
-  selectCtx.setLineDash([10, 12]);
-  selectCtx.strokeStyle = 'rgba(66,197,254,0.7)';
-  selectCtx.lineWidth = 3;
+  const [ax2, ay2] = toPx(anchorX, anchorY);
+  const [px2, py2] = toPx(pullX, pullY);
+  const shot = commSlingshotShot(anchorX, anchorY, pullX, pullY);
+
+  selectCtx.strokeStyle = 'rgba(66,197,254,0.5)';
+  selectCtx.lineWidth = 2;
   selectCtx.beginPath();
   selectCtx.moveTo(ax2, ay2);
-  selectCtx.lineTo(bx2, by2);
+  selectCtx.lineTo(px2, py2);
   selectCtx.stroke();
-  selectCtx.setLineDash([]);
-  selectCtx.fillStyle = 'rgba(66,197,254,0.9)';
-  selectCtx.beginPath(); selectCtx.arc(ax2, ay2, 7, 0, Math.PI * 2); selectCtx.fill();
-  selectCtx.beginPath(); selectCtx.arc(bx2, by2, 13, 0, Math.PI * 2); selectCtx.fill();
-}
 
-function handleCommunicateClick(x, y){
-  if (sessionState !== 'composing') return;
-  if (!commAnchor.set){
-    commAnchor = { x, y, set: true };
-    showSelectOverlay();
-    drawCommPreview(x, y, x, y);
-    flashStatus('ok');
-  } else {
-    const ok = drawCommunicateLine(commAnchor.x, commAnchor.y, x, y);
-    commAnchor = { x: 0, y: 0, set: false };
-    hideSelectOverlay();
-    flashStatus(ok ? 'ok' : 'no');
+  if (shot){
+    const [ex, ey] = toPx(shot.bx, shot.by);
+    selectCtx.strokeStyle = 'rgba(66,197,254,0.75)';
+    selectCtx.lineWidth = 2;
+    selectCtx.beginPath();
+    selectCtx.moveTo(px2, py2);
+    selectCtx.lineTo(ex, ey);
+    selectCtx.stroke();
   }
+
+  selectCtx.fillStyle = 'rgba(66,197,254,0.9)';
+  selectCtx.beginPath();
+  selectCtx.arc(ax2, ay2, 5, 0, Math.PI * 2);
+  selectCtx.fill();
 }
 
 function flashStatus(kind){
@@ -1757,10 +1881,11 @@ function step(dt){
   }
 
   const fixing = sessionState === 'fixing';
+  const sim = activeParams();
   const damp = fixing
     ? Math.exp(-dt * 22)
     : activeDrop.on
-      ? Math.exp(-dt * (2.5 + (1 - PARAMS.flowDamp) * 4))
+      ? Math.exp(-dt * (2.5 + (1 - sim.flowDamp) * 4))
       : Math.exp(-dt * 16);
   progAdvVel.bind();
   gl.uniform1i(progAdvVel.u.uVelocity, velocity.read.attach(0));
@@ -1771,7 +1896,7 @@ function step(dt){
   gl.uniform1f(progAdvVel.u.uDissipation, damp);
   blit(velocity.write); velocity.swap();
 
-  const curlAmt = fixing ? 0 : applyingWater ? (4 + PARAMS.flowDamp * 14) * PARAMS.vorticityScale : 0;
+  const curlAmt = fixing ? 0 : applyingWater ? (4 + sim.flowDamp * 14) * sim.vorticityScale : 0;
   progCurl.bind();
   gl.uniform1i(progCurl.u.uVelocity, velocity.read.attach(0));
   gl.uniform2f(progCurl.u.uTexel, velocity.texel[0], velocity.texel[1]);
@@ -1811,10 +1936,10 @@ function step(dt){
   blit(velocity.write); velocity.swap();
 
   let wetDecay = 1.0;
-  if (PARAMS.dryRate > 0){
+  if (sim.dryRate > 0){
     if (fixing) wetDecay = Math.exp(-dt / FIX_DRY_TAU);
     else if (dropCount > 0){
-      const dryTau = 2 + (1 - PARAMS.dryRate) * 14;
+      const dryTau = 2 + (1 - sim.dryRate) * 14;
       wetDecay = Math.exp(-dt / dryTau);
     }
   }
@@ -1825,7 +1950,7 @@ function step(dt){
   gl.uniform2f(progAdvWet.u.uSrcTexel, wet.texel[0], wet.texel[1]);
   gl.uniform1f(progAdvWet.u.uDt, dt);
   gl.uniform1f(progAdvWet.u.uDecay, wetDecay);
-  gl.uniform1f(progAdvWet.u.uSpread, fixing ? PARAMS.wetSpread * 0.12 : PARAMS.wetSpread);
+  gl.uniform1f(progAdvWet.u.uSpread, fixing ? sim.wetSpread * 0.12 : sim.wetSpread);
   blit(wet.write); wet.swap();
 
   if (!fixing){
@@ -1838,9 +1963,9 @@ function step(dt){
     gl.uniform2f(progAdvInk.u.uSrcTexel, ink.texel[0], ink.texel[1]);
     gl.uniform2f(progAdvInk.u.uPaperTexel, paperRawTexel()[0], paperRawTexel()[1]);
     gl.uniform1f(progAdvInk.u.uDt, dt);
-    gl.uniform1f(progAdvInk.u.uBleed, PARAMS.bleed);
+    gl.uniform1f(progAdvInk.u.uBleed, sim.bleed);
     gl.uniform1f(progAdvInk.u.uAspect, canvas.width / canvas.height);
-    gl.uniform1f(progAdvInk.u.uTension, PARAMS.tension);
+    gl.uniform1f(progAdvInk.u.uTension, sim.tension);
     gl.uniform1f(progAdvInk.u.uPaperCoverRatio, paperCoverRatio());
     gl.uniform1f(progAdvInk.u.uPaperDisp, PAPER_DISP);
     gl.uniform1f(progAdvInk.u.uPaperLoaded, paperReady ? 1 : 0);
@@ -1859,7 +1984,7 @@ function render(){
   gl.uniform1i(progDisplay.u.uFixedInk, fixedInk.attach(1));
   gl.uniform1i(progDisplay.u.uPaper, bindPaper(2));
   gl.uniform2f(progDisplay.u.uTexel, ink.texel[0], ink.texel[1]);
-  gl.uniform1f(progDisplay.u.uInkStrength, PARAMS.displayStrength);
+  gl.uniform1f(progDisplay.u.uInkStrength, activeParams().displayStrength);
   gl.uniform1f(progDisplay.u.uEdge, 2.15);
   gl.uniform1f(progDisplay.u.uPaperCoverRatio, paperCoverRatio());
   gl.uniform1f(progDisplay.u.uPaperReady, paperEnabled() ? 1 : 0);
@@ -1916,6 +2041,11 @@ canvas.addEventListener('pointerdown', e => {
   ptr.holdStart = performance.now();
   if (sessionState === 'composing') beginTimerPause();
   readPressure(e);
+  if (appMode === 'communicate' && sessionState === 'composing'){
+    commAnchor = { x, y, set: true };
+    showSelectOverlay();
+    drawCommSlingshotPreview(x, y, x, y);
+  }
   if (strokes++ === 0) hintEl.classList.add('gone');
 });
 
@@ -1927,7 +2057,7 @@ canvas.addEventListener('pointermove', e => {
   if (!ptr.down) ptr.type = e.pointerType;
   readPressure(e);
   if (appMode === 'communicate' && commAnchor.set){
-    drawCommPreview(commAnchor.x, commAnchor.y, x, y);
+    drawCommSlingshotPreview(commAnchor.x, commAnchor.y, x, y);
   }
 });
 
@@ -1950,7 +2080,12 @@ function endStroke(e){
 
   if (sessionState === 'composing'){
     if (appMode === 'communicate'){
-      handleCommunicateClick(x, y);
+      if (commAnchor.set){
+        const ok = drawCommunicateLine(commAnchor.x, commAnchor.y, x, y);
+        commAnchor = { x: 0, y: 0, set: false };
+        hideSelectOverlay();
+        flashStatus(ok ? 'ok' : 'no');
+      }
     } else {
       if (depositInkDrop(x, y, holdMs)) flashStatus('ok');
       else flashStatus('no');
@@ -2043,13 +2178,18 @@ requestAnimationFrame(frame);
 /* ---------------- UI ---------------- */
 
 const swatchEls = [];
-const paletteNameEl = document.getElementById('paletteName');
+const huePickerEl = document.getElementById('huePicker');
+const hueSliderEl = document.getElementById('hueSlider');
+let editingHueIdx = -1;
+let swatchClickTimer = null;
 
 function updateSwatchUI(){
   swatchEls.forEach((el, i) => {
     const on = enabledColors.includes(i);
     el.classList.toggle('on', on);
+    el.classList.toggle('editing', i === editingHueIdx);
     el.setAttribute('aria-pressed', on ? 'true' : 'false');
+    el.style.background = PALETTE[i].hex;
   });
 }
 function toggleColor(idx){
@@ -2064,41 +2204,69 @@ function toggleColor(idx){
   updateSwatchUI();
   updatePhaseUI();
 }
+function closeHueEditor(){
+  editingHueIdx = -1;
+  huePickerEl.classList.remove('show');
+  huePickerEl.setAttribute('aria-hidden', 'true');
+  updateSwatchUI();
+}
+function openHueEditor(idx){
+  editingHueIdx = idx;
+  hueSliderEl.value = Math.round(colorHues[idx]);
+  huePickerEl.style.setProperty('--hue-preview', PALETTE[idx].hex);
+  huePickerEl.classList.add('show');
+  huePickerEl.setAttribute('aria-hidden', 'false');
+  updateSwatchUI();
+}
+function applyHue(idx, hue){
+  colorHues[idx] = ((hue % 360) + 360) % 360;
+  rebuildPalette();
+  saveColorHues();
+  if (editingHueIdx === idx){
+    huePickerEl.style.setProperty('--hue-preview', PALETTE[idx].hex);
+  }
+  updateSwatchUI();
+  updatePhaseUI();
+}
 function buildSwatches(){
   colorSwatchesEl.innerHTML = '';
   swatchEls.length = 0;
-  enabledColors = PALETTE.map((_, i) => i);
-  dropColorIdx = 0;
   PALETTE.forEach((c, i) => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'color-swatch on';
     btn.style.background = c.hex;
-    btn.title = c.name;
+    btn.title = c.name + ' — double-click to edit hue';
     btn.setAttribute('aria-label', c.name);
     btn.setAttribute('aria-pressed', 'true');
-    btn.addEventListener('click', e => { e.stopPropagation(); toggleColor(i); });
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (swatchClickTimer) {
+        clearTimeout(swatchClickTimer);
+        swatchClickTimer = null;
+        openHueEditor(i);
+        return;
+      }
+      swatchClickTimer = setTimeout(() => {
+        swatchClickTimer = null;
+        toggleColor(i);
+      }, 220);
+    });
     colorSwatchesEl.appendChild(btn);
     swatchEls.push(btn);
   });
   updateSwatchUI();
-  updatePhaseUI();
-}
-function applyPalette(idx){
-  paletteIdx = ((idx % PALETTES.length) + PALETTES.length) % PALETTES.length;
-  PALETTE = PALETTES[paletteIdx].colors;
-  localStorage.setItem(PALETTE_KEY, String(paletteIdx));
-  if (paletteNameEl) paletteNameEl.textContent = PALETTES[paletteIdx].name;
-  buildSwatches();
-}
-function cyclePalette(){
-  applyPalette(paletteIdx + 1);
 }
 buildSwatches();
-if (paletteNameEl) paletteNameEl.textContent = PALETTES[paletteIdx].name;
-document.getElementById('palettePicker').addEventListener('click', e => {
-  e.stopPropagation();
-  cyclePalette();
+
+hueSliderEl.addEventListener('input', () => {
+  if (editingHueIdx < 0) return;
+  applyHue(editingHueIdx, parseFloat(hueSliderEl.value));
+});
+document.addEventListener('pointerdown', e => {
+  if (!huePickerEl.classList.contains('show')) return;
+  if (huePickerEl.contains(e.target) || [...swatchEls].some(el => el.contains(e.target))) return;
+  closeHueEditor();
 });
 
 const guideEl = document.getElementById('guide');
@@ -2116,7 +2284,7 @@ guideEl.querySelector('.guide-close').addEventListener('click', e => {
 
 const HINTS = {
   create: 'hold to size drop · release · pause to fix',
-  communicate: 'click start · click end · line grows + flows',
+  communicate: 'click anchor · pull back · release — gradient fires past anchor',
   convene: 'hold to size drop · release · pause to fix',
 };
 document.querySelectorAll('.app-mode').forEach(btn => {
@@ -2175,20 +2343,22 @@ const PARAM_DEFS = [
 ];
 
 const COMM_PARAM_DEFS = [
-  { group: 'paramTap', key: 'lineStartSize', store: 'comm', label: 'Start size', step: 0.01,
-    help: 'Dab radius at point A — small at the start.' },
-  { group: 'paramTap', key: 'lineEndSize', store: 'comm', label: 'End size', step: 0.01,
-    help: 'Dab radius at point B — grows larger toward the end.' },
-  { group: 'paramTap', key: 'lineStartDensity', store: 'comm', label: 'Start density', step: 0.01,
-    help: 'Pigment at point A — lighter at the start.' },
-  { group: 'paramTap', key: 'lineEndDensity', store: 'comm', label: 'End density', step: 0.01,
-    help: 'Pigment at point B — more pigment toward the end.' },
-  { group: 'paramTap', key: 'lineSpacing', store: 'comm', label: 'Dab spacing', step: 0.001,
-    help: 'Distance between dabs along the line (uv). Smaller = smoother.' },
-  { group: 'paramWater', key: 'flowStrength', store: 'comm', label: 'Flow strength', step: 1,
-    help: 'Directional water push speed along A → B.' },
-  { group: 'paramWater', key: 'flowWidth', store: 'comm', label: 'Flow width', step: 0.005,
-    help: 'Half-width of the flow band around the line (uv).' },
+  { group: 'paramTap', key: 'lineLength', label: 'Shot length', step: 0.1,
+    help: 'How far the shot travels from the pull point, as a multiple of drag distance. 2 = through anchor and same distance beyond.' },
+  { group: 'paramTap', key: 'lineStartSize', label: 'Launch size', step: 0.01,
+    help: 'Square size at the pull point — multiplied by drag distance.' },
+  { group: 'paramTap', key: 'lineEndSize', label: 'Impact size', step: 0.01,
+    help: 'Square size at the far end — multiplied by drag distance.' },
+  { group: 'paramTap', key: 'lineStartDensity', label: 'Launch density', step: 0.01,
+    help: 'Pigment at the pull point — lighter at launch.' },
+  { group: 'paramTap', key: 'lineEndDensity', label: 'Impact density', step: 0.01,
+    help: 'Pigment at the far end — richer at impact.' },
+  { group: 'paramWater', key: 'flowStrength', label: 'Flow strength', step: 10,
+    help: 'Directional water push along the shot — multiplied by drag distance.' },
+  { group: 'paramWater', key: 'flowWidth', label: 'Flow width', step: 0.05,
+    help: 'Half-width of the flow band — multiplied by drag distance.' },
+  { group: 'paramWater', key: 'flowWander', label: 'Flow wander', step: 0.05,
+    help: 'Sideways meander in the water flow so it is not perfectly straight. 0 = straight.' },
   { group: 'paramSim', key: 'bleed', label: 'Bleed', step: 0.01,
     help: 'Color mixing and watercolor softness within wet areas.' },
   { group: 'paramSim', key: 'flowDamp', label: 'Flow damping', step: 0.01,
@@ -2210,16 +2380,12 @@ const GROUP_ORDER = ['paramTap', 'paramHold', 'paramDebug', 'paramCanvas', 'para
 const GROUP_TITLES = {
   create: { paramTap: 'Tap', paramHold: 'Full hold', paramDebug: 'Debug',
     paramCanvas: 'Canvas', paramWater: 'Water', paramInk: 'Ink drop', paramSim: 'Simulation' },
-  communicate: { paramTap: 'Line', paramDebug: 'Debug', paramCanvas: 'Canvas',
+  communicate: { paramTap: 'Slingshot', paramDebug: 'Debug', paramCanvas: 'Canvas',
     paramWater: 'Flow', paramSim: 'Simulation' },
 };
 
-function paramStoreFor(def){
-  return def.store === 'comm' ? COMM_PARAMS : PARAMS;
-}
-
-function bindParamInput(def, input){
-  const store = paramStoreFor(def);
+function bindParamInput(def, input, mode){
+  const store = paramsForMode(mode);
   const apply = () => {
     const v = parseFloat(input.value);
     if (!Number.isFinite(v)) return;
@@ -2244,6 +2410,7 @@ function addCheckboxRow(group, key, label, help, store){
 
 function renderParamPanel(mode){
   const defs = mode === 'communicate' ? COMM_PARAM_DEFS : PARAM_DEFS;
+  const store = paramsForMode(mode);
   const titles = GROUP_TITLES[mode] || GROUP_TITLES.create;
   for (const g of GROUP_ORDER) document.getElementById(g).innerHTML = '';
   const used = new Set(defs.map(d => d.group));
@@ -2260,7 +2427,7 @@ function renderParamPanel(mode){
     input.type = 'number';
     input.id = id;
     input.step = def.step;
-    input.value = paramStoreFor(def)[def.key];
+    input.value = store[def.key];
     row.innerHTML = '<label for="' + id + '">' + def.label + '</label>';
     row.appendChild(input);
     const help = document.createElement('div');
@@ -2268,16 +2435,16 @@ function renderParamPanel(mode){
     help.textContent = def.help;
     row.appendChild(help);
     document.getElementById(def.group).appendChild(row);
-    bindParamInput(def, input);
+    bindParamInput(def, input, mode);
   });
   if (mode === 'communicate'){
-    addCheckboxRow('paramWater', 'flowGrow', 'Flow grows toward B',
-      'Scale flow speed up from A to B (more push at the end).', COMM_PARAMS);
+    addCheckboxRow('paramWater', 'flowGrow', 'Flow grows toward impact',
+      'Scale flow speed up along the shot (more push at the far end).', store);
     addCheckboxRow('paramSim', 'paperTexture', 'Paper texture',
-      'Show paper scan on canvas. Ink always follows paper grain (displacement).', PARAMS);
+      'Show paper scan on canvas. Ink always follows paper grain (displacement).', store);
   } else {
     addCheckboxRow('paramSim', 'paperTexture', 'Paper texture',
-      'Show paper scan on canvas. Ink always follows paper grain (displacement).', PARAMS);
+      'Show paper scan on canvas. Ink always follows paper grain (displacement).', store);
   }
 }
 
@@ -2316,6 +2483,7 @@ window.addEventListener('keydown', e => {
   if (e.key === 'x') clearAll();
   if (e.key === 's') document.getElementById('bSave').click();
   if (e.key === '?') setGuideOpen(guideEl.classList.contains('collapsed'));
+  if (e.key === 'Escape') closeHueEditor();
 });
 
 })();
