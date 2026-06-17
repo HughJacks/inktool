@@ -111,20 +111,42 @@
                      box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(38, 38, 48, 0.2); }
   .color-swatch.editing { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(66,197,254,.55); transform: scale(1.1); }
 
-  #huePicker { position: fixed; left: 50%; bottom: calc(64px + env(safe-area-inset-bottom));
-               transform: translateX(-50%) translateY(8px); z-index: 8;
-               display: flex; align-items: center; gap: 10px;
-               padding: 10px 14px; border-radius: 999px;
-               background: #fff; box-shadow: 0 2px 16px rgba(0,0,0,.12);
-               opacity: 0; pointer-events: none;
-               transition: opacity .2s ease, transform .2s ease; }
-  #huePicker.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
-  #huePicker .hue-preview { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
-                            border: 1px solid rgba(38,38,48,.12);
-                            background: var(--hue-preview, #ff4980); }
-  #huePicker label { font-size: 7px; letter-spacing: .22em; text-transform: uppercase;
-                     color: rgba(38,38,48,.45); white-space: nowrap; }
-  #huePicker input[type=range] { width: min(200px, 42vw); margin: 0; }
+  #colorPicker { position: fixed; left: 50%; bottom: calc(64px + env(safe-area-inset-bottom));
+                 transform: translateX(-50%) translateY(10px); z-index: 8;
+                 width: min(220px, calc(100vw - 32px)); padding: 12px;
+                 border-radius: 14px; background: #fff;
+                 box-shadow: 0 4px 24px rgba(0,0,0,.14);
+                 opacity: 0; pointer-events: none;
+                 transition: opacity .2s ease, transform .2s ease; }
+  #colorPicker.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+  #colorPicker .cp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  #colorPicker .cp-preview { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+                             border: 1px solid rgba(38,38,48,.12);
+                             background: var(--cp-color, #ff4980); }
+  #colorPicker .cp-title { flex: 1; font-size: 7px; letter-spacing: .22em;
+                           text-transform: uppercase; color: rgba(38,38,48,.55); }
+  #colorPicker .cp-close { border: none; background: none; cursor: pointer; padding: 0 2px;
+                           font-family: inherit; font-size: 16px; line-height: 1;
+                           color: rgba(38,38,48,.35); }
+  #colorPicker .cp-close:hover { color: rgba(38,38,48,.7); }
+  #colorPicker .cp-sv { position: relative; width: 100%; height: 120px; border-radius: 8px;
+                        overflow: hidden; cursor: crosshair; touch-action: none;
+                        background: hsl(var(--cp-h, 340), 100%, 50%); }
+  #colorPicker .cp-sv::before,
+  #colorPicker .cp-sv::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
+  #colorPicker .cp-sv::before { background: linear-gradient(to right, #fff, transparent); }
+  #colorPicker .cp-sv::after { background: linear-gradient(to top, #000, transparent); }
+  #colorPicker .cp-sv-cursor { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px;
+                               border-radius: 50%; border: 2px solid #fff;
+                               box-shadow: 0 0 0 1px rgba(38,38,48,.35), 0 1px 4px rgba(0,0,0,.2);
+                               pointer-events: none; }
+  #colorPicker .cp-hue-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  #colorPicker .cp-hue-row label { font-size: 7px; letter-spacing: .22em; text-transform: uppercase;
+                                   color: rgba(38,38,48,.45); flex-shrink: 0; }
+  #colorPicker .cp-hue-wrap { flex: 1; height: 12px; border-radius: 999px; overflow: hidden;
+                              background: linear-gradient(to right,
+                                #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%); }
+  #colorPicker #cpHue { width: 100%; margin: 0; }
 
   #guide { position: fixed; left: calc(12px + env(safe-area-inset-left));
            bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 6;
@@ -237,7 +259,7 @@
   <div class="guide-block">
     <div class="guide-label">Colors</div>
     <div><b>Click swatch</b> — include or exclude from rotation</div>
-    <div><b>Double-click swatch</b> — adjust that color's hue</div>
+    <div><b>Double-click swatch</b> — open full color picker for that slot</div>
   </div>
   <div class="guide-block">
     <div class="guide-label">Parameters panel (P)</div>
@@ -247,10 +269,17 @@
   </div>
 </aside>
 <button type="button" id="guideToggle" aria-label="Show guide" title="Show guide">?</button>
-<div id="huePicker" aria-hidden="true">
-  <span class="hue-preview" aria-hidden="true"></span>
-  <label for="hueSlider">Hue</label>
-  <input type="range" id="hueSlider" min="0" max="360" step="1" value="340">
+<div id="colorPicker" aria-hidden="true">
+  <div class="cp-head">
+    <span class="cp-preview" aria-hidden="true"></span>
+    <span class="cp-title" id="cpTitle">Color 1</span>
+    <button type="button" class="cp-close" aria-label="Close color picker">×</button>
+  </div>
+  <div class="cp-sv" id="cpSv"><div class="cp-sv-cursor" id="cpSvCursor"></div></div>
+  <div class="cp-hue-row">
+    <label for="cpHue">Hue</label>
+    <div class="cp-hue-wrap"><input type="range" id="cpHue" min="0" max="360" step="1" value="340"></div>
+  </div>
 </div>
 <div id="ui">
   <div class="tool-section app-modes" id="appModes">
@@ -653,52 +682,94 @@ function paperEnabled(){
 }
 
 const COLOR_COUNT = 6;
-const DEFAULT_HUES = [340, 288, 252, 58, 198, 318];
-const COLOR_SAT = 0.78;
-const COLOR_LIGHT = 0.62;
-const HUES_KEY = 'inktool-color-hues';
+const DEFAULT_COLORS = ['#FF4980', '#F5D0FF', '#7E6FF9', '#FAFFAD', '#42C5FE', '#BC5898'];
+const COLORS_KEY = 'inktool-colors-v2';
+const LEGACY_HUES_KEY = 'inktool-color-hues';
 
-function hslToHex(h, s, l){
-  h = ((h % 360) + 360) % 360;
-  const c = (1 - Math.abs(2 * l - 1)) * s;
-  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
-  const m = l - c / 2;
-  let r = 0, g = 0, b = 0;
-  if (h < 60) { r = c; g = x; }
-  else if (h < 120) { r = x; g = c; }
-  else if (h < 180) { g = c; b = x; }
-  else if (h < 240) { g = x; b = c; }
-  else if (h < 300) { r = x; b = c; }
-  else { r = c; b = x; }
-  const toByte = v => Math.round((v + m) * 255).toString(16).padStart(2, '0');
-  return '#' + toByte(r) + toByte(g) + toByte(b);
+function normalizeHex(hex){
+  if (typeof hex !== 'string') return null;
+  const m = hex.trim().match(/^#?([0-9a-f]{6})$/i);
+  if (!m) return null;
+  return '#' + m[1].toUpperCase();
 }
 
-function loadColorHues(){
-  try {
-    const raw = localStorage.getItem(HUES_KEY);
-    if (!raw) return null;
-    const saved = JSON.parse(raw);
-    if (!Array.isArray(saved) || saved.length !== COLOR_COUNT) return null;
-    if (!saved.every(v => Number.isFinite(v))) return null;
-    return saved.map(v => ((v % 360) + 360) % 360);
-  } catch {
-    return null;
+function rgbToHsv(r, g, b){
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0;
+  const s = max === 0 ? 0 : d / max;
+  const v = max;
+  if (d > 0){
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else h = ((r - g) / d + 4) / 6;
   }
+  return [h * 360, s, v];
 }
 
-function saveColorHues(){
-  localStorage.setItem(HUES_KEY, JSON.stringify(colorHues));
+function hsvToRgb(h, s, v){
+  h = (((h % 360) + 360) % 360) / 360;
+  const i = Math.floor(h * 6);
+  const f = h * 6 - i;
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
+  let r = 0, g = 0, b = 0;
+  switch (i % 6){
+    case 0: r = v; g = t; b = p; break;
+    case 1: r = q; g = v; b = p; break;
+    case 2: r = p; g = v; b = t; break;
+    case 3: r = p; g = q; b = v; break;
+    case 4: r = t; g = p; b = v; break;
+    case 5: r = v; g = p; b = q; break;
+  }
+  return [r, g, b];
 }
 
-let colorHues = loadColorHues() || DEFAULT_HUES.slice();
+function hsvToHex(h, s, v){
+  const [r, g, b] = hsvToRgb(h, s, v);
+  const byte = x => Math.round(Math.max(0, Math.min(255, x * 255))).toString(16).padStart(2, '0');
+  return '#' + byte(r) + byte(g) + byte(b);
+}
+
+function hexToHsv(hex){
+  const [r, g, b] = hexToRgb(hex);
+  return rgbToHsv(r, g, b);
+}
+
+function loadCustomColors(){
+  try {
+    const raw = localStorage.getItem(COLORS_KEY);
+    if (raw){
+      const saved = JSON.parse(raw);
+      if (Array.isArray(saved) && saved.length === COLOR_COUNT){
+        const colors = saved.map(normalizeHex);
+        if (colors.every(Boolean)) return colors;
+      }
+    }
+    const legacy = localStorage.getItem(LEGACY_HUES_KEY);
+    if (legacy){
+      const hues = JSON.parse(legacy);
+      if (Array.isArray(hues) && hues.length === COLOR_COUNT){
+        return hues.map(h => hsvToHex(h, 0.78, 0.62));
+      }
+    }
+  } catch {}
+  return null;
+}
+
+function saveCustomColors(){
+  localStorage.setItem(COLORS_KEY, JSON.stringify(customColors));
+}
+
+let customColors = loadCustomColors() || DEFAULT_COLORS.slice();
 let PALETTE = [];
 
 function rebuildPalette(){
-  PALETTE = colorHues.map((h, i) => ({
+  PALETTE = customColors.map((hex, i) => ({
     name: 'Color ' + (i + 1),
-    hex: hslToHex(h, COLOR_SAT, COLOR_LIGHT),
+    hex: normalizeHex(hex) || DEFAULT_COLORS[i],
   }));
+  customColors = PALETTE.map(c => c.hex);
 }
 rebuildPalette();
 
@@ -2178,16 +2249,22 @@ requestAnimationFrame(frame);
 /* ---------------- UI ---------------- */
 
 const swatchEls = [];
-const huePickerEl = document.getElementById('huePicker');
-const hueSliderEl = document.getElementById('hueSlider');
-let editingHueIdx = -1;
+const colorPickerEl = document.getElementById('colorPicker');
+const cpSvEl = document.getElementById('cpSv');
+const cpSvCursorEl = document.getElementById('cpSvCursor');
+const cpHueEl = document.getElementById('cpHue');
+const cpTitleEl = document.getElementById('cpTitle');
+const cpPreviewEl = colorPickerEl.querySelector('.cp-preview');
+let editingColorIdx = -1;
 let swatchClickTimer = null;
+let cpHsv = [340, 0.78, 0.62];
+let cpSvDrag = false;
 
 function updateSwatchUI(){
   swatchEls.forEach((el, i) => {
     const on = enabledColors.includes(i);
     el.classList.toggle('on', on);
-    el.classList.toggle('editing', i === editingHueIdx);
+    el.classList.toggle('editing', i === editingColorIdx);
     el.setAttribute('aria-pressed', on ? 'true' : 'false');
     el.style.background = PALETTE[i].hex;
   });
@@ -2204,29 +2281,47 @@ function toggleColor(idx){
   updateSwatchUI();
   updatePhaseUI();
 }
-function closeHueEditor(){
-  editingHueIdx = -1;
-  huePickerEl.classList.remove('show');
-  huePickerEl.setAttribute('aria-hidden', 'true');
+function syncColorPickerUI(){
+  const hex = hsvToHex(cpHsv[0], cpHsv[1], cpHsv[2]);
+  colorPickerEl.style.setProperty('--cp-h', String(Math.round(cpHsv[0])));
+  colorPickerEl.style.setProperty('--cp-color', hex);
+  cpPreviewEl.style.background = hex;
+  cpHueEl.value = String(Math.round(cpHsv[0]));
+  const rect = cpSvEl.getBoundingClientRect();
+  cpSvCursorEl.style.left = (cpHsv[1] * rect.width) + 'px';
+  cpSvCursorEl.style.top = ((1 - cpHsv[2]) * rect.height) + 'px';
+}
+function closeColorPicker(){
+  editingColorIdx = -1;
+  cpSvDrag = false;
+  colorPickerEl.classList.remove('show');
+  colorPickerEl.setAttribute('aria-hidden', 'true');
   updateSwatchUI();
 }
-function openHueEditor(idx){
-  editingHueIdx = idx;
-  hueSliderEl.value = Math.round(colorHues[idx]);
-  huePickerEl.style.setProperty('--hue-preview', PALETTE[idx].hex);
-  huePickerEl.classList.add('show');
-  huePickerEl.setAttribute('aria-hidden', 'false');
+function openColorPicker(idx){
+  editingColorIdx = idx;
+  cpHsv = hexToHsv(PALETTE[idx].hex);
+  cpTitleEl.textContent = PALETTE[idx].name;
+  colorPickerEl.classList.add('show');
+  colorPickerEl.setAttribute('aria-hidden', 'false');
+  requestAnimationFrame(syncColorPickerUI);
   updateSwatchUI();
 }
-function applyHue(idx, hue){
-  colorHues[idx] = ((hue % 360) + 360) % 360;
+function applyColor(idx, hsv){
+  cpHsv = hsv;
+  const hex = hsvToHex(hsv[0], hsv[1], hsv[2]);
+  customColors[idx] = hex;
   rebuildPalette();
-  saveColorHues();
-  if (editingHueIdx === idx){
-    huePickerEl.style.setProperty('--hue-preview', PALETTE[idx].hex);
-  }
+  saveCustomColors();
+  syncColorPickerUI();
   updateSwatchUI();
   updatePhaseUI();
+}
+function setColorFromSv(clientX, clientY){
+  const rect = cpSvEl.getBoundingClientRect();
+  const s = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  const v = Math.max(0, Math.min(1, 1 - (clientY - rect.top) / rect.height));
+  applyColor(editingColorIdx, [cpHsv[0], s, v]);
 }
 function buildSwatches(){
   colorSwatchesEl.innerHTML = '';
@@ -2236,7 +2331,7 @@ function buildSwatches(){
     btn.type = 'button';
     btn.className = 'color-swatch on';
     btn.style.background = c.hex;
-    btn.title = c.name + ' — double-click to edit hue';
+    btn.title = c.name + ' — double-click to edit color';
     btn.setAttribute('aria-label', c.name);
     btn.setAttribute('aria-pressed', 'true');
     btn.addEventListener('click', e => {
@@ -2244,7 +2339,7 @@ function buildSwatches(){
       if (swatchClickTimer) {
         clearTimeout(swatchClickTimer);
         swatchClickTimer = null;
-        openHueEditor(i);
+        openColorPicker(i);
         return;
       }
       swatchClickTimer = setTimeout(() => {
@@ -2259,14 +2354,32 @@ function buildSwatches(){
 }
 buildSwatches();
 
-hueSliderEl.addEventListener('input', () => {
-  if (editingHueIdx < 0) return;
-  applyHue(editingHueIdx, parseFloat(hueSliderEl.value));
+cpHueEl.addEventListener('input', () => {
+  if (editingColorIdx < 0) return;
+  applyColor(editingColorIdx, [parseFloat(cpHueEl.value), cpHsv[1], cpHsv[2]]);
 });
+cpSvEl.addEventListener('pointerdown', e => {
+  if (editingColorIdx < 0) return;
+  e.preventDefault();
+  cpSvDrag = true;
+  cpSvEl.setPointerCapture(e.pointerId);
+  setColorFromSv(e.clientX, e.clientY);
+});
+cpSvEl.addEventListener('pointermove', e => {
+  if (!cpSvDrag || editingColorIdx < 0) return;
+  setColorFromSv(e.clientX, e.clientY);
+});
+cpSvEl.addEventListener('pointerup', e => {
+  if (!cpSvDrag) return;
+  cpSvDrag = false;
+  try { cpSvEl.releasePointerCapture(e.pointerId); } catch {}
+});
+cpSvEl.addEventListener('pointercancel', () => { cpSvDrag = false; });
+colorPickerEl.querySelector('.cp-close').addEventListener('click', closeColorPicker);
 document.addEventListener('pointerdown', e => {
-  if (!huePickerEl.classList.contains('show')) return;
-  if (huePickerEl.contains(e.target) || [...swatchEls].some(el => el.contains(e.target))) return;
-  closeHueEditor();
+  if (!colorPickerEl.classList.contains('show')) return;
+  if (colorPickerEl.contains(e.target) || [...swatchEls].some(el => el.contains(e.target))) return;
+  closeColorPicker();
 });
 
 const guideEl = document.getElementById('guide');
@@ -2483,7 +2596,7 @@ window.addEventListener('keydown', e => {
   if (e.key === 'x') clearAll();
   if (e.key === 's') document.getElementById('bSave').click();
   if (e.key === '?') setGuideOpen(guideEl.classList.contains('collapsed'));
-  if (e.key === 'Escape') closeHueEditor();
+  if (e.key === 'Escape') closeColorPicker();
 });
 
 })();
