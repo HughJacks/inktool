@@ -149,11 +149,52 @@
   .err { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
          font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: rgba(38,38,48,.5); }
 
+  .palette-picker { display: flex; flex-direction: column; align-items: center; gap: 3px;
+                     border: none; background: none; cursor: pointer; padding: 2px 4px 0;
+                     color: rgba(38, 38, 48, 0.42); font-family: inherit;
+                     transition: color .15s ease; flex-shrink: 0; }
+  .palette-picker:hover { color: rgba(38, 38, 48, 0.72); }
+  .palette-picker svg { width: 16px; height: 16px; display: block; }
+  .palette-picker span { font-size: 6px; letter-spacing: .14em; text-transform: uppercase;
+                         line-height: 1; max-width: 52px; text-align: center;
+                         white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  #guide { position: fixed; left: calc(12px + env(safe-area-inset-left));
+           bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 6;
+           max-width: min(300px, calc(100vw - 24px));
+           padding: 12px 28px 12px 14px; border-radius: 12px;
+           background: rgba(255,255,255,.94); box-shadow: 0 2px 14px rgba(0,0,0,.08);
+           font-size: 9px; line-height: 1.55; color: rgba(38,38,48,.55);
+           transition: opacity .3s ease, transform .3s ease; }
+  #guide.collapsed { opacity: 0; pointer-events: none; transform: translateY(6px); }
+  #guide h3 { margin: 0 0 8px; font-size: 8px; letter-spacing: .32em; text-transform: uppercase;
+              font-weight: 500; color: rgba(38,38,48,.7); }
+  #guide .guide-block { margin-bottom: 8px; }
+  #guide .guide-block:last-child { margin-bottom: 0; }
+  #guide .guide-label { font-size: 7px; letter-spacing: .22em; text-transform: uppercase;
+                        color: rgba(38,38,48,.38); margin-bottom: 2px; }
+  #guide b { font-weight: 600; color: rgba(38,38,48,.82); }
+  #guide .guide-close { position: absolute; top: 8px; right: 10px; border: none; background: none;
+                        cursor: pointer; padding: 2px 4px; font-family: inherit;
+                        font-size: 14px; line-height: 1; color: rgba(38,38,48,.35); }
+  #guide .guide-close:hover { color: rgba(38,38,48,.7); }
+  #guideToggle { position: fixed; left: calc(12px + env(safe-area-inset-left));
+                 bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 7;
+                 width: 28px; height: 28px; padding: 0; border-radius: 50%;
+                 border: 1px solid rgba(38,38,48,.12); background: #fff;
+                 box-shadow: 0 2px 10px rgba(0,0,0,.08); cursor: pointer;
+                 font-family: inherit; font-size: 12px; font-weight: 500;
+                 color: rgba(38,38,48,.55); line-height: 1;
+                 transition: color .15s ease, background .15s ease, opacity .2s ease; }
+  #guideToggle:hover { color: rgba(38,38,48,.85); background: rgba(38,38,48,.04); }
+  #guide:not(.collapsed) ~ #guideToggle { opacity: 0; pointer-events: none; }
+
   body.touch .color-swatch { width: 34px; height: 34px; }
   @media (max-width: 600px) {
     #ui { max-width: calc(100vw - 16px); flex-wrap: wrap; justify-content: center; padding: 10px 14px; }
     .tool-divider { display: none; }
     .app-modes, .color-swatches { width: 100%; justify-content: center; }
+    #guide { max-width: calc(100vw - 80px); font-size: 8px; }
   }
 </style>
 </head>
@@ -166,6 +207,34 @@
   <span class="label"><strong>Ink</strong> · hold to charge</span>
 </div>
 <div id="hint">hold to size drop · release · pause to fix</div>
+<aside id="guide" aria-label="Instructions">
+  <button type="button" class="guide-close" aria-label="Hide guide">×</button>
+  <h3>Guide</h3>
+  <div class="guide-block">
+    <div class="guide-label">Canvas</div>
+    <div><b>Tap</b> — small, dense ink drop</div>
+    <div><b>Hold</b> — charge a larger wash, then release</div>
+    <div><b>Pause</b> — ink fixes to paper after idle</div>
+  </div>
+  <div class="guide-block">
+    <div class="guide-label">Modes</div>
+    <div><b>Create</b> — freeform ink on wet paper</div>
+    <div><b>Communicate</b> — click start, then end; line flows A → B</div>
+    <div><b>Convene</b> — same drawing as Create (group sessions)</div>
+  </div>
+  <div class="guide-block">
+    <div class="guide-label">Toolbar</div>
+    <div><b>Swatches</b> — click to include or exclude a color from rotation</div>
+    <div><b>Palette</b> — cycle preset color palettes</div>
+  </div>
+  <div class="guide-block">
+    <div class="guide-label">Parameters panel (P)</div>
+    <div><b>Clear</b> — wipe the canvas (X)</div>
+    <div><b>Save PNG</b> — download the artwork (S)</div>
+    <div><b>Set default</b> — save current sliders as defaults</div>
+  </div>
+</aside>
+<button type="button" id="guideToggle" aria-label="Show guide" title="Show guide">?</button>
 <div id="ui">
   <div class="tool-section app-modes" id="appModes">
     <button type="button" class="app-mode active" data-mode="create" aria-label="Create">
@@ -190,7 +259,18 @@
     </button>
   </div>
   <div class="tool-divider" aria-hidden="true"></div>
-  <div class="tool-section color-swatches" id="colorSwatches"></div>
+  <div class="tool-section color-swatches">
+    <button type="button" class="palette-picker" id="palettePicker" aria-label="Change palette" title="Change palette">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="7" cy="7" r="2.5" fill="currentColor" stroke="none"/>
+        <circle cx="17" cy="7" r="2.5" fill="currentColor" stroke="none"/>
+        <circle cx="12" cy="17" r="2.5" fill="currentColor" stroke="none"/>
+        <path d="M7 9.5v2M17 9.5v2M9.5 15.5h5"/>
+      </svg>
+      <span id="paletteName">Everyone</span>
+    </button>
+    <div id="colorSwatches"></div>
+  </div>
 </div>
 <aside id="params" aria-hidden="true">
   <h2>Parameters</h2>
@@ -279,11 +359,16 @@ gl.disable(gl.BLEND);
 const TOUCH = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 1;
 if (TOUCH) document.body.classList.add('touch');
 
-const PAPER_DISP = 0.013;
-const PAPER_PATH = 'texturefabrik-com_paper_vol-5_07.jpg';
+const PAPER_DISP = 0.028;
+const PAPER_PATH = './texturefabrik-com_paper_vol-5_07.jpg';
 let paperTex = null;
 let paperReady = false;
 let paperSize = [1, 1];
+
+function resolveAsset(path){
+  try { return new URL(path, location.href).href; }
+  catch { return path; }
+}
 
 function createPaperFallback(){
   const tex = gl.createTexture();
@@ -310,11 +395,86 @@ function uploadPaperTexture(img){
   paperReady = true;
 }
 
+function generateProceduralPaper(size){
+  const c = document.createElement('canvas');
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext('2d');
+  const img = ctx.createImageData(size, size);
+  const d = img.data;
+  const hash = (x, y) => {
+    const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+    return s - Math.floor(s);
+  };
+  const noise = (x, y) => {
+    const ix = Math.floor(x), iy = Math.floor(y);
+    const fx = x - ix, fy = y - iy;
+    const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+    const a = hash(ix, iy), b = hash(ix + 1, iy), c0 = hash(ix, iy + 1), e = hash(ix + 1, iy + 1);
+    return (a + (b - a) * ux) + ((c0 + (e - c0) * ux) - (a + (b - a) * ux)) * uy;
+  };
+  for (let y = 0; y < size; y++){
+    for (let x = 0; x < size; x++){
+      const i = (y * size + x) * 4;
+      const grain = noise(x * 0.09, y * 0.09) * 0.55 + noise(x * 0.35, y * 0.35) * 0.45;
+      const v = 214 + grain * 38;
+      d[i] = d[i + 1] = d[i + 2] = v;
+      d[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return c;
+}
+
+async function loadPaperImage(url){
+  if (location.protocol === 'http:' || location.protocol === 'https:'){
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const blob = await res.blob();
+      const objUrl = URL.createObjectURL(blob);
+      try {
+        const img = new Image();
+        img.src = objUrl;
+        if (img.decode) await img.decode();
+        else await new Promise((ok, no) => { img.onload = ok; img.onerror = no; });
+        URL.revokeObjectURL(objUrl);
+        if (!img.naturalWidth) throw new Error('zero size');
+        return img;
+      } catch (e) {
+        URL.revokeObjectURL(objUrl);
+        throw e;
+      }
+    } catch (e) {
+      console.warn('InkTool: fetch paper failed, trying Image src:', e);
+    }
+  }
+  const img = new Image();
+  await new Promise((ok, no) => {
+    img.onload = ok;
+    img.onerror = () => no(new Error('paper load failed: ' + url));
+    img.src = url;
+  });
+  if (img.decode) await img.decode();
+  if (!img.naturalWidth) throw new Error('paper image has zero size');
+  return img;
+}
+
+async function initPaper(){
+  const url = resolveAsset(PAPER_PATH);
+  try {
+    const img = await loadPaperImage(url);
+    uploadPaperTexture(img);
+    console.info('InkTool: paper texture loaded', url, (img.naturalWidth || img.width) + 'x' + (img.naturalHeight || img.height));
+  } catch (e) {
+    console.error('InkTool: paper texture failed to load:', url, e);
+    console.warn('InkTool: using procedural grain fallback');
+    uploadPaperTexture(generateProceduralPaper(512));
+  }
+}
+
 paperTex = createPaperFallback();
-const paperImg = new Image();
-paperImg.onload = () => uploadPaperTexture(paperImg);
-paperImg.onerror = () => { paperReady = false; };
-paperImg.src = PAPER_PATH;
+initPaper();
 
 function paperCoverRatio(){
   if (paperSize[0] <= 1) return 1;
@@ -357,7 +517,7 @@ const DEFAULT_PARAMS = {
   displayStrength: 1,
   vorticityScale: 0.85,
   waterVelCap: 30,
-  paperTexture: 0,
+  paperTexture: 1,
 };
 
 function loadDevParams(){
@@ -452,14 +612,52 @@ function paperEnabled(){
   return paperReady && PARAMS.paperTexture > 0.5;
 }
 
-const PALETTE = [
-  { name: 'pink', hex: '#FF4980' },
-  { name: 'lavender', hex: '#F5D0FF' },
-  { name: 'purple', hex: '#7E6FF9' },
-  { name: 'yellow', hex: '#FAFFAD' },
-  { name: 'cyan', hex: '#42C5FE' },
-  { name: 'magenta', hex: '#BC5898' },
+const PALETTES = [
+  { name: 'Everyone', colors: [
+    { name: 'pink', hex: '#FF4980' },
+    { name: 'lavender', hex: '#F5D0FF' },
+    { name: 'purple', hex: '#7E6FF9' },
+    { name: 'yellow', hex: '#FAFFAD' },
+    { name: 'cyan', hex: '#42C5FE' },
+    { name: 'magenta', hex: '#BC5898' },
+  ]},
+  { name: 'Warm', colors: [
+    { name: 'coral', hex: '#FF6B4A' },
+    { name: 'peach', hex: '#FFC4A3' },
+    { name: 'gold', hex: '#F5C842' },
+    { name: 'rust', hex: '#C45C3E' },
+    { name: 'rose', hex: '#E8899A' },
+    { name: 'amber', hex: '#FFB347' },
+  ]},
+  { name: 'Cool', colors: [
+    { name: 'sky', hex: '#42C5FE' },
+    { name: 'teal', hex: '#2EC4B6' },
+    { name: 'indigo', hex: '#5B5FEF' },
+    { name: 'mint', hex: '#A8F0D4' },
+    { name: 'slate', hex: '#6B8CBA' },
+    { name: 'ice', hex: '#D4EEFF' },
+  ]},
+  { name: 'Earth', colors: [
+    { name: 'ochre', hex: '#C9A44C' },
+    { name: 'clay', hex: '#B8735A' },
+    { name: 'moss', hex: '#6B8F5E' },
+    { name: 'sand', hex: '#E8D5B0' },
+    { name: 'umber', hex: '#8B6914' },
+    { name: 'stone', hex: '#9A9A8E' },
+  ]},
+  { name: 'Neon', colors: [
+    { name: 'hot pink', hex: '#FF1493' },
+    { name: 'electric', hex: '#00D4FF' },
+    { name: 'lime', hex: '#CCFF00' },
+    { name: 'violet', hex: '#9B30FF' },
+    { name: 'orange', hex: '#FF6600' },
+    { name: 'yellow', hex: '#FFFF00' },
+  ]},
 ];
+const PALETTE_KEY = 'inktool-palette';
+let paletteIdx = parseInt(localStorage.getItem(PALETTE_KEY), 10);
+if (!Number.isFinite(paletteIdx) || paletteIdx < 0 || paletteIdx >= PALETTES.length) paletteIdx = 0;
+let PALETTE = PALETTES[paletteIdx].colors;
 
 const SIM_BASE = 256;
 const DYE_BASE = Math.min(2048, Math.min(canvas.width, canvas.height));
@@ -1845,6 +2043,8 @@ requestAnimationFrame(frame);
 /* ---------------- UI ---------------- */
 
 const swatchEls = [];
+const paletteNameEl = document.getElementById('paletteName');
+
 function updateSwatchUI(){
   swatchEls.forEach((el, i) => {
     const on = enabledColors.includes(i);
@@ -1864,17 +2064,54 @@ function toggleColor(idx){
   updateSwatchUI();
   updatePhaseUI();
 }
-PALETTE.forEach((c, i) => {
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'color-swatch on';
-  btn.style.background = c.hex;
-  btn.title = c.name;
-  btn.setAttribute('aria-label', c.name);
-  btn.setAttribute('aria-pressed', 'true');
-  btn.addEventListener('click', e => { e.stopPropagation(); toggleColor(i); });
-  colorSwatchesEl.appendChild(btn);
-  swatchEls.push(btn);
+function buildSwatches(){
+  colorSwatchesEl.innerHTML = '';
+  swatchEls.length = 0;
+  enabledColors = PALETTE.map((_, i) => i);
+  dropColorIdx = 0;
+  PALETTE.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'color-swatch on';
+    btn.style.background = c.hex;
+    btn.title = c.name;
+    btn.setAttribute('aria-label', c.name);
+    btn.setAttribute('aria-pressed', 'true');
+    btn.addEventListener('click', e => { e.stopPropagation(); toggleColor(i); });
+    colorSwatchesEl.appendChild(btn);
+    swatchEls.push(btn);
+  });
+  updateSwatchUI();
+  updatePhaseUI();
+}
+function applyPalette(idx){
+  paletteIdx = ((idx % PALETTES.length) + PALETTES.length) % PALETTES.length;
+  PALETTE = PALETTES[paletteIdx].colors;
+  localStorage.setItem(PALETTE_KEY, String(paletteIdx));
+  if (paletteNameEl) paletteNameEl.textContent = PALETTES[paletteIdx].name;
+  buildSwatches();
+}
+function cyclePalette(){
+  applyPalette(paletteIdx + 1);
+}
+buildSwatches();
+if (paletteNameEl) paletteNameEl.textContent = PALETTES[paletteIdx].name;
+document.getElementById('palettePicker').addEventListener('click', e => {
+  e.stopPropagation();
+  cyclePalette();
+});
+
+const guideEl = document.getElementById('guide');
+const guideToggleEl = document.getElementById('guideToggle');
+function setGuideOpen(open){
+  guideEl.classList.toggle('collapsed', !open);
+  guideToggleEl.setAttribute('aria-label', open ? 'Hide guide' : 'Show guide');
+  guideToggleEl.title = open ? 'Hide guide' : 'Show guide';
+}
+guideToggleEl.addEventListener('click', () => setGuideOpen(true));
+guideEl.querySelector('.guide-close').addEventListener('click', e => {
+  e.stopPropagation();
+  setGuideOpen(false);
 });
 
 const HINTS = {
@@ -2078,6 +2315,7 @@ window.addEventListener('keydown', e => {
   if (e.key === 'p') toggleParams();
   if (e.key === 'x') clearAll();
   if (e.key === 's') document.getElementById('bSave').click();
+  if (e.key === '?') setGuideOpen(guideEl.classList.contains('collapsed'));
 });
 
 })();
